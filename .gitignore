@@ -1,0 +1,7 @@
+__pycache__/
+*.log
+.env
+procesos.json
+procesos.csv
+contratos_8uit.json
+contratos_8uit.csv

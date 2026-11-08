@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radar 8 UIT</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--mut:#667085;--bd:#e3e6ea;--ac:#0b6bcb;--ok:#137333;--warn:#b26a00}
+@media (prefers-color-scheme:dark){:root{--bg:#111418;--card:#1a1e23;--tx:#e8eaed;--mut:#9aa0a6;--bd:#2c3137;--ac:#6ab0ff;--ok:#5bd17d;--warn:#f0b450}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,sans-serif}
+header{padding:16px;border-bottom:1px solid var(--bd);background:var(--card)}h1{margin:0;font-size:18px}
+.sub{color:var(--mut);font-size:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
+input,select{padding:7px 9px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);font:inherit}
+input[type=search]{flex:1;min-width:200px}
+.wrap{padding:0 16px 24px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--bd);border-radius:8px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+th{font-size:12px;color:var(--mut);cursor:pointer;white-space:nowrap;position:sticky;top:0;background:var(--card)}
+td.d{min-width:260px}a{color:var(--ac)}.e-Vigente{color:var(--ok);font-weight:600}.e-En{color:var(--warn)}
+.nw{white-space:nowrap}
+</style>
+</head>
+<body>
+<header><h1>Radar de contrataciones ≤ 8 UIT</h1><div class="sub" id="meta">Cargando…</div></header>
+<div class="bar">
+ <input type="search" id="q" placeholder="Buscar en descripción, entidad, código…">
+ <select id="obj"><option value="">Todo objeto</option></select>
+ <select id="est"><option value="">Todo estado</option></select>
+ <input type="date" id="desde" title="Publicado desde">
+</div>
+<div class="wrap"><table><thead><tr>
+ <th data-k="fecha_publicacion">Publicado</th><th data-k="codigo">Código</th><th data-k="objeto">Objeto</th>
+ <th data-k="descripcion">Descripción</th><th data-k="entidad">Entidad</th><th data-k="estado">Estado</th>
+ <th data-k="fin_cotizacion">Cierre cotización</th></tr></thead><tbody id="tb"></tbody></table></div>
+<script>
+let rows=[],sortK="fecha_publicacion",asc=false;
+const $=id=>document.getElementById(id),n=s=>(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const f=s=>s?s.replace("T"," ").slice(0,16):"";
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+fetch("contratos_8uit.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{
+ rows=d.contratos||[];
+ for(const [id,k] of [["obj","objeto"],["est","estado"]])
+  [...new Set(rows.map(r=>r[k]).filter(Boolean))].sort().forEach(v=>$(id).add(new Option(v,v)));
+ $("meta").dataset.g=f(d.generado);render();
+}).catch(e=>$("meta").textContent="No se pudo cargar contratos_8uit.json: "+e);
+function render(){
+ const q=n($("q").value).split(/\s+/).filter(Boolean),o=$("obj").value,e=$("est").value,de=$("desde").value;
+ let v=rows.filter(r=>(!o||r.objeto==o)&&(!e||r.estado==e)&&(!de||(r.fecha_publicacion||"")>=de)&&
+  q.every(t=>n([r.descripcion,r.entidad,r.codigo].join(" ")).includes(t)));
+ v.sort((a,b)=>{const x=a[sortK]??"",y=b[sortK]??"";return (x>y?1:x<y?-1:0)*(asc?1:-1)});
+ $("meta").textContent=`${v.length} de ${rows.length} contrataciones · datos generados ${$("meta").dataset.g||""}`;
+ $("tb").innerHTML=v.slice(0,1000).map(r=>`<tr><td class="nw">${f(r.fecha_publicacion)}</td>
+ <td class="nw"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.codigo)}</a></td><td>${esc(r.objeto)}</td>
+ <td class="d">${esc(r.descripcion)}</td><td>${esc(r.entidad)}</td><td class="e-${esc((r.estado||"").split(" ")[0])}">${esc(r.estado)}</td>
+ <td class="nw">${f(r.fin_cotizacion)}</td></tr>`).join("");
+}
+["q","obj","est","desde"].forEach(id=>$(id).addEventListener("input",render));
+document.querySelectorAll("th").forEach(th=>th.onclick=()=>{const k=th.dataset.k;asc=sortK==k?!asc:true;sortK=k;render()});
+</script>
+</body>
+</html>
