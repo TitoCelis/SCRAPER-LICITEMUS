@@ -1,0 +1,501 @@
+<title>Licita Perú</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera con cuenta y pestañas; Explorar (filtros + tabla), Mi empresa (perfil por rubro), Mi reporte (documento imprimible en pantalla) */
+:root{
+  --bg:#f2f6f3; --panel:#ffffff; --ink:#12261c; --muted:#56695e; --line:#d6e2da;
+  --accent:#0d6b44; --accent-soft:#e0f1e7; --sello:#c2410c; --sello-soft:#fdeee6;
+  --ok:#0f766e; --ok-soft:#e0f3f1; --warn:#b45309; --warn-soft:#fdf2dc;
+  --f-display:"Familjen Grotesk","Helvetica Neue",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1611; --panel:#11211a; --ink:#e2efe7; --muted:#90a89a; --line:#20362a;
+  --accent:#5ccf94; --accent-soft:#16382a; --sello:#f08a5d; --sello-soft:#3a2219;
+  --ok:#5eead4; --ok-soft:#123430; --warn:#fbbf24; --warn-soft:#3a2d12; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0b1611; --panel:#11211a; --ink:#e2efe7; --muted:#90a89a; --line:#20362a;
+  --accent:#5ccf94; --accent-soft:#16382a; --sello:#f08a5d; --sello-soft:#3a2219;
+  --ok:#5eead4; --ok-soft:#123430; --warn:#fbbf24; --warn-soft:#3a2d12; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:grid;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--panel);font:700 15px var(--f-display)}
+h1{font:700 26px/1.1 var(--f-display);margin:0;letter-spacing:-.01em}
+h2{font:700 22px/1.2 var(--f-display);margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.acct{display:flex;align-items:center;gap:10px;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 14px 5px 5px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:600}
+.acct small{display:block;color:var(--muted);font-size:11px;line-height:1.2}
+nav{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+nav button{border:0;background:none;border-radius:0;padding:10px 14px;font:600 14px var(--f-body);color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+button,.btn{font:500 13px var(--f-body);border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;border-radius:8px;cursor:pointer}
+button:hover,.btn:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+button:disabled{opacity:.6;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row-actions{display:flex;flex-wrap:wrap;gap:8px}
+.status{font-size:13px;padding:10px 14px;border-radius:8px;background:var(--accent-soft)}
+.status.err{background:var(--sello-soft)}
+code{font-family:var(--f-mono);font-size:12px}
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0;font:16px var(--f-body);padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink)}
+.main{display:grid;grid-template-columns:250px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+aside{display:grid;gap:16px}
+.lbl{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 6px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+select,input[type=number],input[type=text],textarea{width:100%;font:14px var(--f-body);padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink)}
+textarea{resize:vertical;min-height:70px}
+.chk{display:flex;gap:8px;align-items:center;font-size:13px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:600px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:10px 0;border-top:2px solid var(--ink)}
+.kpi b{display:block;font:700 22px var(--f-display);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.results{display:grid;gap:12px;min-width:0}
+.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.tablebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.sort{cursor:pointer}
+td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--accent-soft)}
+.obj{font-weight:500;line-height:1.35}
+.nom{font:12px var(--f-mono);color:var(--muted);margin-top:3px}
+.tags{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.tag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.tag.cd{background:var(--sello-soft);color:var(--sello)}
+.ent b{font-weight:500;display:block;line-height:1.35}
+.ent span{font-size:12px;color:var(--muted)}
+.amt{font:500 14px var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.due{white-space:nowrap;font-size:13px}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;margin-top:4px}
+.pill.hot{background:var(--sello-soft);color:var(--sello)}
+.pill.soon{background:var(--warn-soft);color:var(--warn)}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.closed{background:var(--bg);color:var(--muted)}
+.score{font:600 13px var(--f-mono);color:var(--accent);white-space:nowrap}
+.meter{height:4px;border-radius:2px;background:var(--line);margin-top:5px;width:56px}
+.meter i{display:block;height:100%;border-radius:2px;background:var(--accent)}
+tr.detail td{background:var(--bg);font-size:13px}
+.detail p{margin:0 0 8px;max-width:75ch}
+a{color:var(--accent)}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.ex{font-size:11px;font-weight:600;color:var(--sello);text-transform:uppercase;letter-spacing:.08em}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.form .full{grid-column:1/-1}
+@media (max-width:700px){.form{grid-template-columns:1fr}}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.rep-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:2px solid var(--ink);padding-bottom:14px}
+.rep-meta{font-size:13px;color:var(--muted);display:grid;gap:2px}
+.rep-meta b{color:var(--ink);font-weight:500}
+.rubros{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.rub{display:flex;justify-content:space-between;gap:8px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rub b{font-variant-numeric:tabular-nums}
+.gate{display:grid;gap:12px;justify-items:start;max-width:60ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="mark">LP</div>
+      <div>
+        <h1>Licita Perú</h1>
+        <p class="sub">Licitaciones, concursos y contrataciones directas del SEACE · datos abiertos OCDS del OECE</p>
+      </div>
+    </div>
+    <div class="acct" id="acct"><div class="avatar" id="avatar">·</div><div><span id="acctName">Conectando…</span><small id="acctSub">&nbsp;</small></div></div>
+  </header>
+
+  <nav role="tablist">
+    <button role="tab" id="t-explorar" aria-selected="true" data-v="explorar">Explorar procesos</button>
+    <button role="tab" id="t-empresa" aria-selected="false" data-v="empresa">Mi empresa</button>
+    <button role="tab" id="t-reporte" aria-selected="false" data-v="reporte">Mi reporte</button>
+  </nav>
+
+  <div id="status" class="status"><span class="ex">Datos de ejemplo</span> · Pulsa <b>Traer últimos procesos</b> para leer la API en vivo, o carga el <code>procesos.json</code> que genera el scraper.</div>
+
+  <!-- EXPLORAR -->
+  <section id="v-explorar" class="results">
+    <div class="row-actions">
+      <button id="btnLive" class="primary">Traer últimos procesos</button>
+      <label class="btn" for="file">Cargar procesos.json</label>
+      <input id="file" type="file" accept=".json,application/json" hidden>
+    </div>
+    <div class="search"><input id="q" type="search" placeholder="Buscar por objeto, entidad o nomenclatura (ej. oxígeno, EsSalud, LP-SM)" autocomplete="off"></div>
+    <div class="main">
+      <aside class="card">
+        <div><span class="lbl">Procedimiento</span><div class="chips" id="tipos"></div></div>
+        <div><span class="lbl">Categoría</span><div class="chips" id="cats"></div></div>
+        <div><label class="lbl" for="monto">Valor referencial mínimo</label>
+          <select id="monto">
+            <option value="0">Cualquier monto</option><option value="100000">Desde S/ 100 mil</option>
+            <option value="400000" selected>Desde S/ 400 mil</option><option value="1000000">Desde S/ 1 millón</option>
+            <option value="5000000">Desde S/ 5 millones</option><option value="20000000">Desde S/ 20 millones</option>
+          </select></div>
+        <div><label class="lbl" for="dep">Departamento</label><select id="dep"></select></div>
+        <div class="chk"><input type="checkbox" id="vig" checked><label for="vig">Solo con plazo de ofertas abierto</label></div>
+        <div class="chk"><input type="checkbox" id="sinMonto"><label for="sinMonto">Incluir procesos sin monto publicado</label></div>
+      </aside>
+      <div class="results">
+        <div class="kpis">
+          <div class="kpi"><b id="kN">0</b><span>procesos</span></div>
+          <div class="kpi"><b id="kM">S/ 0</b><span>valor referencial total</span></div>
+          <div class="kpi"><b id="kCD">0</b><span>contrataciones directas</span></div>
+          <div class="kpi"><b id="kH">0</b><span>cierran en 3 días</span></div>
+        </div>
+        <div class="bar"><span id="count"></span><span>Clic en una fila para ver el detalle</span></div>
+        <div class="tablebox"><table>
+          <thead><tr><th>Oportunidad</th><th>Entidad</th><th class="sort" data-k="monto" style="text-align:right">Valor ref. ↕</th><th class="sort" data-k="cierre">Cierre ofertas ↕</th></tr></thead>
+          <tbody id="tb"></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MI EMPRESA -->
+  <section id="v-empresa" hidden>
+    <div class="card" style="display:grid;gap:18px">
+      <div><h2>Perfil de la empresa</h2><p class="sub" id="perfilNota">Define a qué se dedica tu empresa. Licita Perú usa este perfil para armar tu reporte de procesos a los que puedes postular.</p></div>
+      <form id="fPerfil" class="form" novalidate>
+        <div><label class="lbl" for="pRazon">Razón social</label><input type="text" id="pRazon" placeholder="Ej. Distribuidora Andina S.A.C." required></div>
+        <div><label class="lbl" for="pRuc">RUC</label><input type="text" id="pRuc" inputmode="numeric" maxlength="11" placeholder="20xxxxxxxxx"><div class="hint" id="rucHint"></div></div>
+        <div class="full"><span class="lbl">Rubros (elige uno o más)</span><div class="chips" id="pRubros"></div></div>
+        <div class="full"><label class="lbl" for="pKw">Palabras clave propias</label><textarea id="pKw" placeholder="Separadas por coma: concentrador de oxígeno, cánula nasal, balón de oxígeno"></textarea><div class="hint">Productos o servicios específicos que vendes. Se suman a las palabras de cada rubro.</div></div>
+        <div class="full"><label class="lbl" for="pExcl">Excluir procesos que mencionen</label><input type="text" id="pExcl" placeholder="Ej. obra, supervisión"></div>
+        <div><label class="lbl" for="pMin">Monto mínimo (S/)</label><input type="number" id="pMin" min="0" step="1000" placeholder="0"></div>
+        <div><label class="lbl" for="pMax">Monto máximo que puedes atender (S/)</label><input type="number" id="pMax" min="0" step="1000" placeholder="Sin límite"><div class="hint">Según tu capacidad de contratación y experiencia acreditable.</div></div>
+        <div class="full"><span class="lbl">Departamentos donde atiendes (vacío = todo el Perú)</span><div class="chips" id="pDeps"></div></div>
+        <div class="full"><span class="lbl">Procedimientos a los que postulas</span><div class="chips" id="pTipos"></div></div>
+        <div class="full chk"><input type="checkbox" id="pRnp"><label for="pRnp">Tengo inscripción vigente en el RNP (bienes / servicios / obras según corresponda)</label></div>
+        <div class="full row-actions"><button type="submit" class="primary" id="btnGuardar">Guardar perfil</button><button type="button" id="btnVerRep">Ver mi reporte</button><span class="sub" id="saveMsg" aria-live="polite"></span></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- MI REPORTE -->
+  <section id="v-reporte" hidden>
+    <div class="card" style="display:grid;gap:18px" id="repBox"></div>
+  </section>
+</div>
+
+<script>
+const API="https://contratacionesabiertas.oece.gob.pe/api/v1";
+const TIPOS=["Licitación Pública","Concurso Público","Contratación Directa","Adjudicación Simplificada","Subasta Inversa","Selección de Consultores"];
+const CATS=["Bien","Servicio","Obra","Consultoría"];
+const CATMAP={goods:"Bien",services:"Servicio",works:"Obra",consultingServices:"Consultoría"};
+const DEPS=["AMAZONAS","ANCASH","APURIMAC","AREQUIPA","AYACUCHO","CAJAMARCA","CALLAO","CUSCO","HUANCAVELICA","HUANUCO","ICA","JUNIN","LA LIBERTAD","LAMBAYEQUE","LIMA","LORETO","MADRE DE DIOS","MOQUEGUA","PASCO","PIURA","PUNO","SAN MARTIN","TACNA","TUMBES","UCAYALI"];
+const RUBROS={
+ "Insumos médicos":["material medico","descartable","guante","jeringa","mascarilla","gasa","cateter","sutura","insumo medico","quirurgic"],
+ "Equipos médicos":["equipo medico","equipo biomedic","biomedic","oxigen","monitor de funciones","ventilador mecanico","ecograf","desfibrilador","tensiometro","oximetro"],
+ "Medicamentos":["medicamento","farmac","producto farmaceutico","antibiotic","vacuna"],
+ "Laboratorio":["reactivo","laboratorio","prueba rapida","pcr","bioseguridad"],
+ "Obras y construcción":["ejecucion de obra","obra","construccion","mejoramiento","pistas","veredas","saneamiento","agua potable","puente","infraestructura"],
+ "Consultoría y supervisión":["consultoria","supervision","expediente tecnico","estudio de preinversion","elaboracion de estudio"],
+ "Tecnología":["computadora","laptop","software","servidor","impresora","licencia","equipos informaticos","red de datos","tecnologia"],
+ "Limpieza y mantenimiento":["limpieza","mantenimiento","fumigacion","desinfeccion"],
+ "Seguridad y vigilancia":["vigilancia","seguridad","cctv","videovigilancia"],
+ "Alimentos":["alimento","viveres","raciones","desayuno","alimentario"],
+ "Vehículos y combustible":["vehiculo","camioneta","ambulancia","combustible","neumatico","maquinaria"],
+ "Útiles y mobiliario":["utiles","papel","toner","mobiliario","escritorio"]
+};
+const NOMRE=/^[A-Z]{2,5}(-[A-Z]{1,4})?-\d/;
+const d=n=>new Date(Date.now()+n*864e5).toISOString();
+let DATA=[
+ {nomenclatura:"LP-SM-4-2026-MINSA-1",objeto:"Adquisición de equipos de oxigenoterapia para establecimientos de salud del primer nivel",tipo:"Licitación Pública",categoria:"Bien",entidad:"Ministerio de Salud",departamento:"LIMA",monto:18450000,fecha_cierre:d(9),fecha_publicacion:d(-3)},
+ {nomenclatura:"CD-SM-12-2026-ESSALUD-1",objeto:"Contratación directa por desabastecimiento de reactivos de laboratorio clínico",tipo:"Contratación Directa",categoria:"Bien",entidad:"Seguro Social de Salud - EsSalud",departamento:"LIMA",monto:3260000,fecha_cierre:d(2),fecha_publicacion:d(-1)},
+ {nomenclatura:"LP-SM-2-2026-GRA-1",objeto:"Ejecución de obra: mejoramiento del servicio de agua potable en el centro poblado La Joya",tipo:"Licitación Pública",categoria:"Obra",entidad:"Gobierno Regional de Arequipa",departamento:"AREQUIPA",monto:42780000,fecha_cierre:d(21),fecha_publicacion:d(-6)},
+ {nomenclatura:"CP-SM-3-2026-INS-1",objeto:"Servicio de mantenimiento preventivo y correctivo de equipos de laboratorio de bioseguridad",tipo:"Concurso Público",categoria:"Servicio",entidad:"Instituto Nacional de Salud",departamento:"LIMA",monto:1890000,fecha_cierre:d(5),fecha_publicacion:d(-4)},
+ {nomenclatura:"AS-SM-31-2026-HNDAC-1",objeto:"Suministro de material médico descartable para centro quirúrgico",tipo:"Adjudicación Simplificada",categoria:"Bien",entidad:"Hospital Nacional Daniel Alcides Carrión",departamento:"CALLAO",monto:486300,fecha_cierre:d(1),fecha_publicacion:d(-2)},
+ {nomenclatura:"CD-SM-5-2026-MPH-1",objeto:"Contratación directa por situación de emergencia: limpieza de cauce del río Santa",tipo:"Contratación Directa",categoria:"Servicio",entidad:"Municipalidad Provincial de Huaraz",departamento:"ANCASH",monto:2140000,fecha_cierre:null,fecha_publicacion:d(-2)},
+ {nomenclatura:"LP-SM-9-2026-GRP-1",objeto:"Adquisición de ambulancias rurales tipo II para la red de salud",tipo:"Licitación Pública",categoria:"Bien",entidad:"Gobierno Regional de Piura",departamento:"PIURA",monto:7350000,fecha_cierre:d(14),fecha_publicacion:d(-5)},
+ {nomenclatura:"CP-SM-1-2026-MDSJL-1",objeto:"Supervisión de obra: construcción de puente vehicular en Av. Próceres",tipo:"Concurso Público",categoria:"Consultoría",entidad:"Municipalidad Distrital de San Juan de Lurigancho",departamento:"LIMA",monto:920000,fecha_cierre:d(-1),fecha_publicacion:d(-12)},
+ {nomenclatura:"LP-SM-6-2026-DIRESA ICA-1",objeto:"Adquisición de guantes de nitrilo y mascarillas KN95 para la red de salud",tipo:"Licitación Pública",categoria:"Bien",entidad:"Dirección Regional de Salud Ica",departamento:"ICA",monto:1240000,fecha_cierre:d(7),fecha_publicacion:d(-2)},
+ {nomenclatura:"AS-SM-14-2026-HRC-1",objeto:"Adquisición de concentradores de oxígeno de 10 litros",tipo:"Adjudicación Simplificada",categoria:"Bien",entidad:"Hospital Regional de Cusco",departamento:"CUSCO",monto:612000,fecha_cierre:d(3),fecha_publicacion:d(-1)},
+ {nomenclatura:"CP-SM-8-2026-SUNAT-1",objeto:"Servicio de limpieza y desinfección de sedes institucionales",tipo:"Concurso Público",categoria:"Servicio",entidad:"SUNAT",departamento:"LIMA",monto:5480000,fecha_cierre:d(11),fecha_publicacion:d(-3)},
+ {nomenclatura:"SIE-SM-22-2026-MINEDU-1",objeto:"Adquisición de computadoras portátiles para docentes",tipo:"Subasta Inversa",categoria:"Bien",entidad:"Ministerio de Educación",departamento:"LIMA",monto:12900000,fecha_cierre:d(6),fecha_publicacion:d(-2)},
+].map(r=>({...r,ejemplo:true}));
+
+const st={view:"explorar",q:"",tipos:new Set(["Licitación Pública","Concurso Público","Contratación Directa"]),cats:new Set(),monto:400000,dep:"",vig:true,sinMonto:false,sort:"monto",dir:-1,open:null};
+const PERFIL_VACIO={razon:"",ruc:"",rubros:[],kw:"",excl:"",min:null,max:null,deps:[],tipos:["Licitación Pública","Concurso Público","Contratación Directa","Adjudicación Simplificada","Subasta Inversa"],rnp:false};
+let perfil={...PERFIL_VACIO}, perfilRef=null, modo="cargando", dl=null;
+
+const $=id=>document.getElementById(id);
+const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const soles=n=>n==null?"—":"S/ "+Number(n).toLocaleString("es-PE",{maximumFractionDigits:0});
+const corto=n=>n>=1e6?"S/ "+(n/1e6).toLocaleString("es-PE",{maximumFractionDigits:1})+" M":n>=1e3?"S/ "+Math.round(n/1e3).toLocaleString("es-PE")+" mil":soles(n);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dias=f=>f?Math.ceil((new Date(f)-Date.now())/864e5):null;
+const fecha=f=>f?new Date(f).toLocaleString("es-PE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}):"—";
+const lista=s=>String(s||"").split(",").map(x=>nrm(x)).filter(Boolean);
+
+/* ---------- datos ---------- */
+function aplanar(rel){
+  const t=rel.tender||{},b=rel.buyer||{};let region="";
+  for(const p of rel.parties||[]){if(p.id===b.id||(p.roles||[]).includes("buyer")){region=(p.address&&p.address.region)||"";if(region)break;}}
+  const tit=(t.title||"").trim(),desc=(t.description||"").trim();
+  const [nom,obj]=NOMRE.test(tit)?[tit,desc||tit]:[t.id||"",tit||desc];
+  return {ocid:rel.ocid,release_id:rel.id,nomenclatura:nom,objeto:obj,descripcion:desc,tipo:t.procurementMethodDetails||"",
+    categoria:CATMAP[t.mainProcurementCategory]||t.mainProcurementCategory||"",entidad:b.name||"",departamento:nrm(region).toUpperCase(),
+    monto:t.value?t.value.amount:null,fecha_publicacion:rel.date,fecha_cierre:t.tenderPeriod?t.tenderPeriod.endDate:null,
+    estado:t.status||"",url:rel.id?`${API}/release/${rel.id}`:""};
+}
+function ingerir(json){
+  const arr=Array.isArray(json)?json:(json.procesos||json.releases||[]);
+  const rows=arr.map(x=>x.tender?aplanar(x):x).filter(x=>x&&x.objeto);
+  const m=new Map();for(const r of rows){const k=r.ocid||r.nomenclatura,p=m.get(k);if(!p||(r.fecha_publicacion||"")>(p.fecha_publicacion||""))m.set(k,r);}
+  return [...m.values()];
+}
+
+/* ---------- explorar ---------- */
+function filtrar(){
+  const q=nrm(st.q).split(/\s+/).filter(Boolean);
+  return DATA.filter(r=>{
+    if(st.tipos.size&&![...st.tipos].some(t=>nrm(r.tipo).includes(nrm(t))))return false;
+    if(st.cats.size&&!st.cats.has(r.categoria))return false;
+    if(!r.monto){if(!st.sinMonto)return false;}else if(r.monto<st.monto)return false;
+    if(st.dep&&nrm(r.departamento)!==nrm(st.dep))return false;
+    if(st.vig){const n=dias(r.fecha_cierre);if(n!==null&&n<0)return false;}
+    if(q.length){const blob=nrm([r.objeto,r.descripcion,r.entidad,r.nomenclatura].join(" "));if(!q.every(w=>blob.includes(w)))return false;}
+    return true;
+  }).sort(ordenar);
+}
+function ordenar(a,b){
+  if(st.sort==="monto")return st.dir*((a.monto||0)-(b.monto||0));
+  const fa=a.fecha_cierre?+new Date(a.fecha_cierre):Infinity,fb=b.fecha_cierre?+new Date(b.fecha_cierre):Infinity;return st.dir*(fa-fb);
+}
+function pill(f){
+  const n=dias(f);if(n===null)return '<span class="pill closed">Sin fecha</span>';
+  if(n<0)return '<span class="pill closed">Cerrado</span>';
+  if(n<=1)return `<span class="pill hot">${n===0?"Hoy":"Mañana"}</span>`;
+  if(n<=5)return `<span class="pill soon">${n} días</span>`;
+  return `<span class="pill ok">${n} días</span>`;
+}
+function filaHTML(r,extra){
+  const k=r.ocid||r.nomenclatura,cd=nrm(r.tipo).includes("directa");
+  let h=`<tr class="row" data-k="${esc(k)}">${extra?`<td>${extra}</td>`:""}
+    <td><div class="obj">${esc(r.objeto)}</div><div class="nom">${esc(r.nomenclatura)}</div>
+      <div class="tags"><span class="tag ${cd?"cd":""}">${esc(r.tipo||"—")}</span>${r.categoria?`<span class="tag">${esc(r.categoria)}</span>`:""}${r._rub?r._rub.map(x=>`<span class="tag">${esc(x)}</span>`).join(""):""}${r.ejemplo?'<span class="ex">ejemplo</span>':""}</div></td>
+    <td class="ent"><b>${esc(r.entidad)}</b><span>${esc(r.departamento||"")}</span></td>
+    <td class="amt">${soles(r.monto)}</td>
+    <td class="due">${fecha(r.fecha_cierre)}<br>${pill(r.fecha_cierre)}</td></tr>`;
+  if(st.open===k)h+=`<tr class="detail"><td colspan="${extra?5:4}">
+    ${r.descripcion&&r.descripcion!==r.objeto?`<p>${esc(r.descripcion)}</p>`:""}
+    ${r._por?`<p>Calza por: ${r._por.map(esc).join(", ")}</p>`:""}
+    <p>Publicado: ${fecha(r.fecha_publicacion)} · Estado: ${esc(r.estado||"—")} · OCID: <code>${esc(r.ocid||"—")}</code></p>
+    <p>${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">Ver release OCDS completo</a> · `:""}<a href="https://prod2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml" target="_blank" rel="noopener">Abrir buscador SEACE</a> (busca la nomenclatura)</p></td></tr>`;
+  return h;
+}
+function renderExplorar(){
+  const rows=filtrar();
+  $("kN").textContent=rows.length.toLocaleString("es-PE");
+  $("kM").textContent=corto(rows.reduce((s,r)=>s+(r.monto||0),0));
+  $("kCD").textContent=rows.filter(r=>nrm(r.tipo).includes("directa")).length;
+  $("kH").textContent=rows.filter(r=>{const n=dias(r.fecha_cierre);return n!==null&&n>=0&&n<=3}).length;
+  $("count").textContent=`${rows.length} de ${DATA.length} procesos cargados`;
+  $("tb").innerHTML=rows.length?rows.slice(0,500).map(r=>filaHTML(r)).join(""):'<tr><td colspan="4" class="empty">Ningún proceso calza con estos filtros. Baja el monto mínimo o suma más tipos de procedimiento.</td></tr>';
+}
+
+/* ---------- perfil y calce ---------- */
+function calce(r,p){
+  const blob=nrm([r.objeto,r.descripcion].join(" "));
+  for(const x of lista(p.excl))if(blob.includes(x))return null;
+  const rub=[],por=[];
+  for(const name of p.rubros){const hits=(RUBROS[name]||[]).filter(k=>blob.includes(k));if(hits.length){rub.push(name);por.push(...hits);}}
+  const propias=lista(p.kw).filter(k=>blob.includes(k));por.push(...propias);
+  if(!por.length)return null;
+  if(p.tipos.length&&!p.tipos.some(t=>nrm(r.tipo).includes(nrm(t))))return null;
+  if(p.min&&r.monto&&r.monto<p.min)return null;
+  if(p.max&&r.monto&&r.monto>p.max)return null;
+  if(p.deps.length&&!p.deps.some(x=>nrm(x)===nrm(r.departamento)))return null;
+  const n=dias(r.fecha_cierre);if(n!==null&&n<0)return null;
+  let score=55+Math.min(30,(por.length-1)*10)+(propias.length?15:0);
+  if(p.deps.length)score+=5;
+  return {score:Math.min(100,score),rub:rub.length?rub:["Palabra clave propia"],por:[...new Set(por)]};
+}
+function oportunidades(){
+  return DATA.map(r=>{const c=calce(r,perfil);return c?{...r,_score:c.score,_rub:c.rub,_por:c.por}:null}).filter(Boolean)
+    .sort((a,b)=>b._score-a._score||((a.fecha_cierre?+new Date(a.fecha_cierre):Infinity)-(b.fecha_cierre?+new Date(b.fecha_cierre):Infinity)));
+}
+function perfilListo(){return perfil.razon&&(perfil.rubros.length||lista(perfil.kw).length)}
+
+function renderReporte(){
+  const box=$("repBox");
+  if(!perfilListo()){
+    box.innerHTML=`<div class="gate"><h2>Primero cuéntanos qué vende tu empresa</h2><p class="sub">El reporte cruza los procesos vigentes con tus rubros, montos y departamentos. Completa el perfil para generarlo.</p><button class="primary" data-go="empresa">Completar perfil</button></div>`;return;
+  }
+  const ops=oportunidades(),tot=ops.reduce((s,r)=>s+(r.monto||0),0);
+  const porRub={};ops.forEach(r=>r._rub.forEach(x=>{porRub[x]=porRub[x]||{n:0,m:0};porRub[x].n++;porRub[x].m+=r.monto||0}));
+  const hoy=new Date().toLocaleDateString("es-PE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  box.innerHTML=`
+    <div class="rep-head">
+      <div><span class="lbl">Reporte de oportunidades</span><h2>${esc(perfil.razon)}</h2>
+        <div class="rep-meta">${perfil.ruc?`<span>RUC <b>${esc(perfil.ruc)}</b></span>`:""}<span>Rubros: <b>${esc([...perfil.rubros,...(perfil.kw?["palabras propias"]:[])].join(", "))}</b></span>
+        <span>Cobertura: <b>${perfil.deps.length?esc(perfil.deps.join(", ")):"Todo el Perú"}</b> · Montos: <b>${perfil.min?soles(perfil.min):"S/ 0"} a ${perfil.max?soles(perfil.max):"sin límite"}</b></span>
+        <span>Emitido el ${hoy} sobre ${DATA.length} procesos cargados${DATA.some(r=>r.ejemplo)?' <span class="ex">datos de ejemplo</span>':""}</span></div></div>
+      <div class="row-actions"><button id="dlCsv">Descargar CSV</button><button id="dlHtml" class="primary">Descargar reporte</button></div>
+    </div>
+    ${!perfil.rnp?`<div class="status err">Marcaste que no tienes RNP vigente. Sin inscripción en el RNP no puedes presentar ofertas: tramítala en el OECE antes de postular.</div>`:""}
+    <div class="kpis">
+      <div class="kpi"><b>${ops.length}</b><span>procesos en los que puedes participar</span></div>
+      <div class="kpi"><b>${corto(tot)}</b><span>valor referencial en juego</span></div>
+      <div class="kpi"><b>${ops.filter(r=>{const n=dias(r.fecha_cierre);return n!==null&&n<=3}).length}</b><span>cierran en 3 días o menos</span></div>
+      <div class="kpi"><b>${ops.filter(r=>nrm(r.tipo).includes("directa")).length}</b><span>contrataciones directas</span></div>
+    </div>
+    ${Object.keys(porRub).length?`<div><span class="lbl">Por rubro</span><div class="rubros">${Object.entries(porRub).sort((a,b)=>b[1].m-a[1].m).map(([k,v])=>`<div class="rub"><span>${esc(k)}</span><b>${v.n} · ${corto(v.m)}</b></div>`).join("")}</div></div>`:""}
+    <div class="tablebox"><table>
+      <thead><tr><th>Calce</th><th>Oportunidad</th><th>Entidad</th><th style="text-align:right">Valor ref.</th><th>Cierre ofertas</th></tr></thead>
+      <tbody id="tbRep">${ops.length?ops.map(r=>filaHTML(r,`<div class="score">${r._score}%</div><div class="meter"><i style="width:${r._score}%"></i></div>`)).join(""):'<tr><td colspan="5" class="empty">Hoy no hay procesos vigentes que calcen con tu perfil. Prueba sumar palabras clave, ampliar departamentos o subir el monto máximo, o carga datos más recientes.</td></tr>'}</tbody>
+    </table></div>`;
+  $("dlCsv").onclick=()=>descargar(`licita-peru-${hoyISO()}.csv`,csvDe(ops),"text/csv");
+  $("dlHtml").onclick=()=>descargar(`reporte-licita-peru-${hoyISO()}.html`,reporteHTML(ops,porRub,tot,hoy),"text/html");
+}
+const hoyISO=()=>new Date().toISOString().slice(0,10);
+function csvDe(rows){
+  const cols=["_score","nomenclatura","objeto","tipo","categoria","entidad","departamento","monto","fecha_cierre","ocid"];
+  return "﻿"+["calce,"+cols.slice(1).join(",")].concat(rows.map(r=>cols.map(c=>`"${String(c==="_rub"?r._rub.join("; "):r[c]??"").replace(/"/g,'""')}"`).join(","))).join("\n");
+}
+function reporteHTML(ops,porRub,tot,hoy){
+  const tr=ops.map(r=>`<tr><td>${r._score}%</td><td><b>${esc(r.objeto)}</b><br><small>${esc(r.nomenclatura)} · ${esc(r.tipo)} · ${esc(r._rub.join(", "))}</small></td><td>${esc(r.entidad)}<br><small>${esc(r.departamento)}</small></td><td style="text-align:right;white-space:nowrap">${soles(r.monto)}</td><td style="white-space:nowrap">${fecha(r.fecha_cierre)}</td></tr>`).join("");
+  return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Reporte Licita Perú - ${esc(perfil.razon)}</title>
+<style>body{font:14px/1.5 Arial,sans-serif;color:#12261c;max-width:1000px;margin:32px auto;padding:0 20px}h1{color:#0d6b44;margin:0}table{width:100%;border-collapse:collapse;margin-top:16px}th,td{border-bottom:1px solid #d6e2da;padding:8px;text-align:left;vertical-align:top}th{font-size:11px;text-transform:uppercase;color:#56695e}small{color:#56695e}.k{display:flex;gap:32px;margin:18px 0}.k b{display:block;font-size:22px}</style></head><body>
+<p style="color:#0d6b44;font-weight:bold">LICITA PERÚ · Reporte de oportunidades</p><h1>${esc(perfil.razon)}</h1>
+<p>${perfil.ruc?"RUC "+esc(perfil.ruc)+" · ":""}Rubros: ${esc(perfil.rubros.join(", ")||"palabras propias")} · Emitido el ${hoy}</p>
+<div class="k"><div><b>${ops.length}</b>procesos</div><div><b>${soles(tot)}</b>valor referencial</div></div>
+<p>${Object.entries(porRub).map(([k,v])=>`${esc(k)}: ${v.n} (${corto(v.m)})`).join(" · ")}</p>
+<table><thead><tr><th>Calce</th><th>Proceso</th><th>Entidad</th><th>Valor ref.</th><th>Cierre</th></tr></thead><tbody>${tr}</tbody></table>
+<p><small>Fuente: datos abiertos OCDS del OECE (SEACE). Verifica bases y cronograma en el SEACE antes de postular.</small></p></body></html>`;
+}
+async function descargar(nombre,contenido,tipo){
+  if(dl){try{await dl.save({filename:nombre,data:new Blob([contenido],{type:tipo})});setStatus(`Listo: ${esc(nombre)}`);return}catch(e){if(e&&e.code==="declined")return;}}
+  try{await navigator.clipboard.writeText(contenido);setStatus(`No se pudo descargar aquí; copié el contenido de ${esc(nombre)} al portapapeles.`);}
+  catch{setStatus("No se pudo descargar ni copiar en esta vista. Abre la página en claude.ai para descargar.",true);}
+}
+
+/* ---------- formulario ---------- */
+let fp={};
+function chipSet(el,list,arr,onChange){
+  el.innerHTML=list.map(t=>`<button type="button" class="chip" aria-pressed="${arr.includes(t)}" data-v="${esc(t)}">${esc(t)}</button>`).join("");
+  el.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v,i=arr.indexOf(v);i>=0?arr.splice(i,1):arr.push(v);b.setAttribute("aria-pressed",i<0);onChange&&onChange();};
+}
+function llenarForm(){
+  fp=JSON.parse(JSON.stringify(perfil));
+  $("pRazon").value=fp.razon;$("pRuc").value=fp.ruc;$("pKw").value=fp.kw;$("pExcl").value=fp.excl;
+  $("pMin").value=fp.min??"";$("pMax").value=fp.max??"";$("pRnp").checked=!!fp.rnp;
+  chipSet($("pRubros"),Object.keys(RUBROS),fp.rubros);chipSet($("pDeps"),DEPS,fp.deps);chipSet($("pTipos"),TIPOS,fp.tipos);
+}
+$("pRuc").oninput=e=>{const v=e.target.value.replace(/\D/g,"");e.target.value=v;$("rucHint").textContent=v&&!/^(10|15|17|20)\d{9}$/.test(v)?"El RUC tiene 11 dígitos y empieza con 10, 15, 17 o 20.":"";};
+$("fPerfil").onsubmit=async e=>{
+  e.preventDefault();
+  const razon=$("pRazon").value.trim();
+  if(!razon){$("saveMsg").textContent="Escribe la razón social.";$("pRazon").focus();return;}
+  if(!fp.rubros.length&&!lista($("pKw").value).length){$("saveMsg").textContent="Elige al menos un rubro o escribe tus palabras clave.";return;}
+  const num=v=>v===""?null:Math.max(0,+v);
+  perfil={...fp,razon,ruc:$("pRuc").value.trim(),kw:$("pKw").value.trim(),excl:$("pExcl").value.trim(),min:num($("pMin").value),max:num($("pMax").value),rnp:$("pRnp").checked,actualizado:new Date().toISOString()};
+  $("btnGuardar").disabled=true;$("saveMsg").textContent="Guardando…";
+  try{
+    if(perfilRef)await perfilRef.set(perfil);
+    else{try{localStorage.setItem("lp-perfil",JSON.stringify(perfil))}catch{}}
+    $("saveMsg").textContent=perfilRef?"Perfil guardado en tu cuenta.":"Perfil guardado en este navegador.";
+    pintarCuenta();
+  }catch(err){$("saveMsg").textContent="No se pudo guardar: "+(err&&err.message||"intenta de nuevo")+".";}
+  finally{$("btnGuardar").disabled=false;}
+};
+$("btnVerRep").onclick=()=>ir("reporte");
+
+/* ---------- cuenta ---------- */
+let nombreUsuario="";
+function pintarCuenta(){
+  const n=nombreUsuario||"Invitado";
+  $("avatar").textContent=(perfil.razon||n).trim().charAt(0).toUpperCase()||"·";
+  $("acctName").textContent=perfil.razon||n;
+  $("acctSub").textContent=modo==="cuenta"?`Sesión: ${n}`:modo==="local"?"Modo invitado · solo este navegador":"Conectando…";
+}
+async function iniciarCuenta(){
+  let user=null,db=null;
+  try{[user,db,dl]=await Promise.all([claude.use("user"),claude.use("db"),claude.use("downloads")])}catch{}
+  if(user){try{const me=await user.me();nombreUsuario=me.name||"";}catch{}}
+  let uid=null;if(user){try{uid=await user.id()}catch{}}
+  if(db&&uid){
+    modo="cuenta";perfilRef=db.doc(`data/users/${uid}/perfil`);
+    $("perfilNota").textContent="Tu perfil queda guardado en tu cuenta y solo tú lo ves.";
+    const t=setTimeout(()=>setStatus("La cuenta tarda en responder. Puedes seguir usando la página.",true),10000);
+    try{const s=await perfilRef.get();clearTimeout(t);if(s.exists)perfil={...PERFIL_VACIO,...s.data()};}
+    catch(e){clearTimeout(t);setStatus("No pude leer tu perfil guardado. Revisa tu conexión.",true);}
+  }else{
+    modo="local";
+    try{const s=localStorage.getItem("lp-perfil");if(s)perfil={...PERFIL_VACIO,...JSON.parse(s)}}catch{}
+    $("perfilNota").textContent="Estás como invitado: el perfil se guarda solo en este navegador. Inicia sesión en claude.ai para tenerlo en tu cuenta.";
+  }
+  pintarCuenta();llenarForm();if(st.view==="reporte")renderReporte();
+}
+
+/* ---------- navegación ---------- */
+function ir(v){
+  st.view=v;
+  ["explorar","empresa","reporte"].forEach(x=>{$("v-"+x).hidden=x!==v;$("t-"+x).setAttribute("aria-selected",x===v)});
+  if(v==="reporte")renderReporte();
+  try{history.replaceState(null,"","#"+v)}catch{}
+}
+document.querySelector("nav").onclick=e=>{const b=e.target.closest("button");if(b)ir(b.dataset.v)};
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g)ir(g.dataset.go)});
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(["explorar","empresa","reporte"].includes(h)&&h!==st.view)ir(h)});
+
+function setStatus(html,err){const s=$("status");s.innerHTML=html;s.classList.toggle("err",!!err);}
+function rerender(){renderExplorar();if(st.view==="reporte")renderReporte();}
+function deps(){
+  const list=[...new Set(DATA.map(r=>r.departamento).filter(Boolean))].sort();
+  $("dep").innerHTML='<option value="">Todo el Perú</option>'+list.map(x=>`<option ${x===st.dep?"selected":""}>${esc(x)}</option>`).join("");
+}
+async function live(){
+  const btn=$("btnLive");btn.disabled=true;let url=`${API}/releasesAfter?format=json&order=desc`,all=[];
+  try{
+    for(let p=1;p<=15;p++){
+      setStatus(`Leyendo la API del OECE… página ${p} · ${all.length} releases`);
+      const r=await fetch(url,{headers:{Accept:"application/json"}});if(!r.ok)throw new Error("HTTP "+r.status);
+      const j=await r.json();all.push(...(j.releases||[]));const nx=j.links&&j.links.next;if(!nx)break;url=nx;
+    }
+    DATA=ingerir(all);deps();rerender();
+    setStatus(`En vivo · ${all.length} releases recientes → ${DATA.length} procesos. Para cubrir más días usa el scraper.`);
+  }catch(e){
+    setStatus(`El navegador no pudo leer la API directamente (${esc(e.message||e)}). La API no acepta llamadas desde otras webs: corre <code>python scraper_oece.py --dias 7</code> y carga el <code>procesos.json</code>.`,true);
+  }finally{btn.disabled=false;}
+}
+$("file").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;const rd=new FileReader();
+  rd.onload=()=>{try{const j=JSON.parse(rd.result);DATA=ingerir(j);deps();rerender();setStatus(`Cargado ${esc(f.name)} · ${DATA.length} procesos${j.generado?" · generado "+fecha(j.generado):""}`);}
+    catch{setStatus("Ese archivo no es un JSON válido. Usa el procesos.json que genera el scraper.",true);}};
+  rd.readAsText(f);
+};
+$("btnLive").onclick=live;
+$("q").oninput=e=>{st.q=e.target.value;renderExplorar()};
+$("monto").onchange=e=>{st.monto=+e.target.value;renderExplorar()};
+$("dep").onchange=e=>{st.dep=e.target.value;renderExplorar()};
+$("vig").onchange=e=>{st.vig=e.target.checked;renderExplorar()};
+$("sinMonto").onchange=e=>{st.sinMonto=e.target.checked;renderExplorar()};
+document.querySelectorAll("th.sort").forEach(th=>th.onclick=()=>{const k=th.dataset.k;st.dir=st.sort===k?-st.dir:(k==="monto"?-1:1);st.sort=k;renderExplorar();});
+document.addEventListener("click",e=>{const tr=e.target.closest("tr.row");if(!tr)return;st.open=st.open===tr.dataset.k?null:tr.dataset.k;rerender();});
+
+/* chips del explorador */
+function chipsExp(el,list,set){
+  el.innerHTML=list.map(t=>`<button class="chip" aria-pressed="${set.has(t)}" data-v="${esc(t)}">${esc(t)}</button>`).join("");
+  el.onclick=e=>{const b=e.target.closest(".chip");if(!b)return;const v=b.dataset.v;set.has(v)?set.delete(v):set.add(v);b.setAttribute("aria-pressed",set.has(v));renderExplorar();};
+}
+chipsExp($("tipos"),TIPOS,st.tipos);chipsExp($("cats"),CATS,st.cats);deps();renderExplorar();llenarForm();pintarCuenta();
+const h0=location.hash.slice(1);if(["empresa","reporte"].includes(h0))ir(h0);
+fetch("procesos.json",{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;const rows=ingerir(j);if(!rows.length)return;DATA=rows;deps();rerender();setStatus(`Cargado procesos.json · ${DATA.length} procesos${j.generado?" · generado "+fecha(j.generado):""}`);}).catch(()=>{});
+if(window.claude&&claude.use)iniciarCuenta();else{modo="local";try{const s=localStorage.getItem("lp-perfil");if(s)perfil={...PERFIL_VACIO,...JSON.parse(s)}}catch{};pintarCuenta();llenarForm();if(st.view==="reporte")renderReporte();}
+</script>

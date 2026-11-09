@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Scraper de procesos del Estado peruano (SEACE) vía la API OCDS del OECE.
-CMI General Solutions
+Licita Perú
 
 Baja las publicaciones más recientes, filtra procesos grandes
 (Licitación Pública, Concurso Público, Contratación Directa, etc.)
@@ -34,7 +34,7 @@ import requests
 
 API = "https://contratacionesabiertas.oece.gob.pe/api/v1"
 START_URL = f"{API}/releasesAfter?format=json&order=desc"
-HEADERS = {"User-Agent": "CMI-Radar/1.0 (+scraper OCDS)", "Accept": "application/json"}
+HEADERS = {"User-Agent": "LicitaPeru/1.0 (+scraper OCDS)", "Accept": "application/json"}
 
 # Tipos de procedimiento considerados "grandes"
 TIPOS_DEFAULT = [

@@ -1,12 +1,13 @@
 # SCRAPER LICITEMUS
 
-Radar de contrataciones del Estado peruano. CMI General Solutions.
+Radar de contrataciones del Estado peruano.
 
 | Script | Fuente | Qué baja |
 |---|---|---|
 | `scraper_oece.py` | API OCDS del OECE (`contratacionesabiertas.oece.gob.pe`) | Procesos grandes: Licitación Pública, Concurso Público, Contratación Directa, etc. |
 | `scraper_8uit.py` | Buscador público de contrataciones ≤ 8 UIT (`prep6.seace.gob.pe`) | Contratos menores |
 | `index.html` | — | Buscador unificado: pestañas *Procesos de selección* (`procesos.json`) y *Contrataciones ≤ 8 UIT* (`contratos_8uit.json`), con filtros por objeto, procedimiento, estado, departamento, entidad, fechas y monto |
+| `licita-peru.html` | — | **Licita Perú**: explorador de procesos grandes + perfil de empresa por rubro + reporte de procesos a los que puede postular (descarga CSV/HTML). Lee `procesos.json` automáticamente |
 | `actualizar.sh` | — | Corre ambos scrapers de una vez |
 
 ## Instalación
@@ -33,6 +34,8 @@ Ver el buscador:
 ```bash
 python3 -m http.server 8000   # abrir http://localhost:8000
 ```
+
+Licita Perú: `http://localhost:8000/licita-peru.html`. Fuera de claude.ai el perfil de empresa se guarda en el navegador (modo invitado); el login con usuario y contraseña queda pendiente (Supabase Auth).
 
 ## Supabase (opcional)
 
