@@ -6,7 +6,8 @@ Radar de contrataciones del Estado peruano. CMI General Solutions.
 |---|---|---|
 | `scraper_oece.py` | API OCDS del OECE (`contratacionesabiertas.oece.gob.pe`) | Procesos grandes: Licitación Pública, Concurso Público, Contratación Directa, etc. |
 | `scraper_8uit.py` | Buscador público de contrataciones ≤ 8 UIT (`prep6.seace.gob.pe`) | Contratos menores |
-| `index.html` | — | Explorador web para `contratos_8uit.json` |
+| `index.html` | — | Buscador unificado: pestañas *Procesos de selección* (`procesos.json`) y *Contrataciones ≤ 8 UIT* (`contratos_8uit.json`), con filtros por objeto, procedimiento, estado, departamento, entidad, fechas y monto |
+| `actualizar.sh` | — | Corre ambos scrapers de una vez |
 
 ## Instalación
 
@@ -21,7 +22,13 @@ python3 scraper_oece.py --dias 7 --monto-min 400000
 python3 scraper_8uit.py --dias 3 --vigentes --objeto bien,servicio --departamento lima
 ```
 
-Ver el explorador:
+Ambos a la vez:
+
+```bash
+./actualizar.sh            # o ./actualizar.sh --supabase
+```
+
+Ver el buscador:
 
 ```bash
 python3 -m http.server 8000   # abrir http://localhost:8000
@@ -34,8 +41,7 @@ Variables: `SUPABASE_URL`, `SUPABASE_KEY`, `SUPABASE_TABLE` (OECE, PK `ocid`), `
 ## Cron sugerido (VPS)
 
 ```
-0 */2 * * * cd /opt/radar && python3 scraper_oece.py --dias 2 --supabase >> radar.log 2>&1
-30 */2 * * * cd /opt/radar && python3 scraper_8uit.py --dias 2 --supabase >> radar.log 2>&1
+0 */2 * * * cd /opt/radar && ./actualizar.sh --supabase >> radar.log 2>&1
 ```
 
 ## Notas
