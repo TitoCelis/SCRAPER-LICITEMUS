@@ -2,9 +2,5 @@
   "framework": null,
   "buildCommand": "",
   "installCommand": "",
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/", "destination": "/licita-peru.html" },
-    { "source": "/radar", "destination": "/index.html" }
-  ]
+  "cleanUrls": true
 }

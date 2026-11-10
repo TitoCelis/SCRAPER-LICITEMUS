@@ -6,8 +6,8 @@ Radar de contrataciones del Estado peruano.
 |---|---|---|
 | `scraper_oece.py` | API OCDS del OECE (`contratacionesabiertas.oece.gob.pe`) | Procesos grandes: Licitación Pública, Concurso Público, Contratación Directa, etc. |
 | `scraper_8uit.py` | Buscador público de contrataciones ≤ 8 UIT (`prep6.seace.gob.pe`) | Contratos menores |
-| `index.html` | — | Buscador unificado: pestañas *Procesos de selección* (`procesos.json`) y *Contrataciones ≤ 8 UIT* (`contratos_8uit.json`), con filtros por objeto, procedimiento, estado, departamento, entidad, fechas y monto |
-| `licita-peru.html` | Supabase `licita_procesos` | **Licita Perú**: login con correo y contraseña, perfil de empresa por rubro y reporte diario en la app (nuevos en 24 h + todos los vigentes, descarga CSV/HTML) |
+| `radar.html` | — | Buscador unificado: pestañas *Procesos de selección* (`procesos.json`) y *Contrataciones ≤ 8 UIT* (`contratos_8uit.json`), con filtros por objeto, procedimiento, estado, departamento, entidad, fechas y monto |
+| `index.html` | Supabase `licita_procesos` | **Licita Perú**: login con correo y contraseña, perfil de empresa por rubro y reporte diario en la app (nuevos en 24 h + todos los vigentes, descarga CSV/HTML) |
 | `actualizar.sh` | — | Corre ambos scrapers de una vez |
 
 ## Instalación
@@ -35,7 +35,7 @@ Ver el buscador:
 python3 -m http.server 8000   # abrir http://localhost:8000
 ```
 
-Licita Perú: `http://localhost:8000/licita-peru.html` (necesita internet: usa Supabase).
+Licita Perú: `http://localhost:8000/` (el radar viejo en `/radar.html`) (necesita internet: usa Supabase).
 
 ## Supabase (Licita Perú)
 

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Radar Licitemus</title>
+<style>
+:root{--bg:#f3f5f7;--card:#fff;--tx:#1b2430;--mut:#5d6b7a;--bd:#d9dfe6;--ac:#0d5c91;--acbg:#e6f0f8;--ok:#137333;--warn:#a2620a;--off:#7a8590}
+@media (prefers-color-scheme:dark){:root{--bg:#10151b;--card:#18202a;--tx:#e5eaf0;--mut:#9aa7b4;--bd:#2a3542;--ac:#7cb8e6;--acbg:#1d2c3b;--ok:#5fd68a;--warn:#e8b25a;--off:#8a96a2}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 system-ui,"Segoe UI",sans-serif}
+header{background:var(--card);border-bottom:1px solid var(--bd);padding:14px 16px}
+h1{margin:0;font-size:19px}.sub{color:var(--mut);font-size:12px;margin-top:2px}
+.tabs{display:flex;gap:4px;padding:12px 16px 0;flex-wrap:wrap}
+.tab{border:1px solid var(--bd);border-bottom:0;background:var(--bg);color:var(--mut);padding:9px 14px;border-radius:8px 8px 0 0;cursor:pointer;font:inherit}
+.tab[aria-selected=true]{background:var(--card);color:var(--ac);font-weight:600}
+.tab small{font-weight:400;color:var(--mut);margin-left:4px}
+main{margin:0 16px 24px;background:var(--card);border:1px solid var(--bd);border-radius:0 8px 8px 8px;padding:14px}
+fieldset{border:1px solid var(--bd);border-radius:8px;padding:12px;margin:0 0 12px}
+legend{font-size:12px;color:var(--mut);padding:0 6px;text-transform:uppercase;letter-spacing:.05em}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mut)}
+label.wide{grid-column:1/-1}
+input,select,button{padding:8px 10px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);font:inherit;min-width:0}
+button{cursor:pointer}.pri{background:var(--ac);border-color:var(--ac);color:var(--card);font-weight:600}
+.acts{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
+.stats{display:flex;gap:18px;flex-wrap:wrap;margin:4px 0 10px}
+.stats b{font-size:18px;font-variant-numeric:tabular-nums;display:block}.stats span{font-size:11px;color:var(--mut);text-transform:uppercase}
+.tw{overflow-x:auto;border:1px solid var(--bd);border-radius:8px}
+table{width:100%;border-collapse:collapse;min-width:900px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}
+th{font-size:11px;color:var(--mut);text-transform:uppercase;cursor:pointer;white-space:nowrap;background:var(--acbg)}
+th.s::after{content:" ↓"}th.s.a::after{content:" ↑"}
+.nw{white-space:nowrap;font-variant-numeric:tabular-nums}.num{text-align:right}
+td.d{min-width:260px}a{color:var(--ac)}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;border:1px solid currentColor;font-size:12px;white-space:nowrap}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.off{color:var(--off)}
+.empty{padding:28px;text-align:center;color:var(--mut)}
+.empty code{background:var(--acbg);padding:2px 6px;border-radius:4px}
+.more{font-size:12px;color:var(--mut);margin-top:8px}
+</style>
+</head>
+<body>
+<header><h1>Radar Licitemus</h1><div class="sub">Búsqueda de procesos de selección (OECE/SEACE) y contrataciones menores o iguales a 8 UIT</div></header>
+<div class="tabs" role="tablist">
+ <button class="tab" role="tab" data-t="todos" aria-selected="true">Todos<small id="c-todos"></small></button>
+ <button class="tab" role="tab" data-t="proc">Procesos de selección<small id="c-proc"></small></button>
+ <button class="tab" role="tab" data-t="menor">Contrataciones ≤ 8 UIT<small id="c-menor"></small></button>
+</div>
+<main>
+<fieldset><legend>Filtros de búsqueda</legend>
+<div class="grid">
+ <label class="wide">Descripción del objeto / entidad / nomenclatura<input type="search" id="q" placeholder="Ej.: computadoras, mantenimiento, Gobierno Regional"></label>
+ <label>Objeto de contratación<select id="obj"><option value="">Todos</option></select></label>
+ <label>Tipo de procedimiento<select id="tipo"><option value="">Todos</option></select></label>
+ <label>Estado<select id="est"><option value="">Todos</option></select></label>
+ <label>Departamento<select id="dep"><option value="">Todos</option></select></label>
+ <label>Entidad<input id="ent" list="ents" placeholder="Nombre de la entidad"><datalist id="ents"></datalist></label>
+ <label>Publicado desde<input type="date" id="desde"></label>
+ <label>Publicado hasta<input type="date" id="hasta"></label>
+ <label>Monto mínimo (S/)<input type="number" id="mmin" min="0" step="1000"></label>
+ <label>Monto máximo (S/)<input type="number" id="mmax" min="0" step="1000"></label>
+</div>
+<div class="acts"><button class="pri" id="buscar">Buscar</button><button id="limpiar">Limpiar</button><span class="sub" id="gen"></span></div>
+</fieldset>
+<div class="stats" id="stats"></div>
+<div id="out"></div>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const n=s=>(s||"").toString().normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const f=s=>s?String(s).replace("T"," ").slice(0,16):"—";
+const money=(v,m)=>v==null||v===""?"—":(m&&m!="PEN"?m+" ":"S/ ")+Number(v).toLocaleString("es-PE",{maximumFractionDigits:2});
+const ESTADO={active:"Convocado",planned:"Planificado",complete:"Culminado",cancelled:"Cancelado",unsuccessful:"Desierto",withdrawn:"Retirado"};
+let rows=[],tab="todos",sortK="fecha",asc=false,gen={};
+
+function deProcesos(d){return (d.procesos||[]).map(r=>({fuente:"proc",fecha:r.fecha_publicacion,cierre:r.fecha_cierre,
+ codigo:r.nomenclatura||r.ocid,objeto:r.categoria,descripcion:r.objeto||r.descripcion,entidad:r.entidad,
+ departamento:r.departamento,tipo:r.tipo,estado:ESTADO[r.estado]||r.estado,monto:r.monto,moneda:r.moneda,url:r.url}))}
+function deMenores(d){return (d.contratos||[]).map(r=>({fuente:"menor",fecha:r.fecha_publicacion,cierre:r.fin_cotizacion,
+ codigo:r.codigo,objeto:r.objeto,descripcion:r.descripcion,entidad:r.entidad,departamento:r.departamento||"",
+ tipo:"Contratación ≤ 8 UIT",estado:r.estado,monto:r.monto??null,moneda:"PEN",url:r.url}))}
+const cargar=u=>fetch(u,{cache:"no-store"}).then(r=>r.ok?r.json():null).catch(()=>null);
+
+Promise.all([cargar("procesos.json"),cargar("contratos_8uit.json")]).then(([p,m])=>{
+ gen={proc:p&&p.generado,menor:m&&m.generado};
+ rows=[...(p?deProcesos(p):[]),...(m?deMenores(m):[])];
+ const opts=(id,k)=>[...new Set(rows.map(r=>r[k]).filter(Boolean))].sort().forEach(v=>$(id).add(new Option(v,v)));
+ opts("obj","objeto");opts("tipo","tipo");opts("est","estado");opts("dep","departamento");
+ $("ents").innerHTML=[...new Set(rows.map(r=>r.entidad).filter(Boolean))].sort().map(e=>`<option value="${esc(e)}">`).join("");
+ $("gen").textContent=["Procesos: "+(gen.proc?f(gen.proc):"sin datos"),"≤ 8 UIT: "+(gen.menor?f(gen.menor):"sin datos")].join(" · ");
+ render();
+});
+
+function filtrados(){
+ const q=n($("q").value).split(/\s+/).filter(Boolean),ent=n($("ent").value),mmin=parseFloat($("mmin").value),mmax=parseFloat($("mmax").value);
+ const v={obj:$("obj").value,tipo:$("tipo").value,est:$("est").value,dep:$("dep").value,de:$("desde").value,ha:$("hasta").value};
+ return rows.filter(r=>(!v.obj||r.objeto==v.obj)&&(!v.tipo||r.tipo==v.tipo)&&(!v.est||r.estado==v.est)&&(!v.dep||r.departamento==v.dep)
+  &&(!v.de||(r.fecha||"")>=v.de)&&(!v.ha||(r.fecha||"").slice(0,10)<=v.ha)&&(!ent||n(r.entidad).includes(ent))
+  &&(isNaN(mmin)||(r.monto??-1)>=mmin)&&(isNaN(mmax)||(r.monto!=null&&r.monto<=mmax))
+  &&q.every(t=>n(r.descripcion+" "+r.entidad+" "+r.codigo).includes(t)));
+}
+function pill(e){const k=n(e);const c=/vigente|convocado|planificado/.test(k)?"ok":/evaluacion/.test(k)?"warn":"off";return `<span class="pill ${c}">${esc(e||"—")}</span>`}
+function render(){
+ const all=filtrados();
+ ["todos","proc","menor"].forEach(t=>$("c-"+t).textContent=`(${(t=="todos"?all:all.filter(r=>r.fuente==t)).length.toLocaleString("es-PE")})`);
+ const v=tab=="todos"?all:all.filter(r=>r.fuente==tab);
+ v.sort((a,b)=>{const x=a[sortK]??"",y=b[sortK]??"";return (x>y?1:x<y?-1:0)*(asc?1:-1)});
+ const tot=v.reduce((s,r)=>s+(r.moneda=="PEN"&&r.monto?r.monto:0),0);
+ $("stats").innerHTML=[["Resultados",v.length.toLocaleString("es-PE")],["Abiertos / vigentes",v.filter(r=>/vigente|convocado/i.test(r.estado||"")).length],
+  ["Entidades",new Set(v.map(r=>r.entidad)).size],["Monto referencial (S/)",tot?tot.toLocaleString("es-PE",{maximumFractionDigits:0}):"—"]]
+  .map(([l,x])=>`<div><b>${x}</b><span>${l}</span></div>`).join("");
+ const falta=tab!="menor"&&!gen.proc,faltaM=tab!="proc"&&!gen.menor;
+ let aviso="";
+ if(falta)aviso+=`<div class="empty">No hay datos de procesos de selección. Ejecuta <code>python3 scraper_oece.py</code> desde una IP en Perú para generar <code>procesos.json</code>.</div>`;
+ if(faltaM)aviso+=`<div class="empty">No hay datos de contrataciones ≤ 8 UIT. Ejecuta <code>python3 scraper_8uit.py</code>.</div>`;
+ if(!v.length){$("out").innerHTML=aviso||`<div class="empty">Ningún resultado con esos filtros.</div>`;return}
+ const cols=[["fecha","Publicado"],["codigo","Nomenclatura"],["tipo","Procedimiento"],["objeto","Objeto"],["descripcion","Descripción"],["entidad","Entidad"],["departamento","Depto."],["monto","Valor ref."],["estado","Estado"],["cierre","Cierre"]];
+ $("out").innerHTML=aviso+`<div class="tw"><table><thead><tr>${cols.map(([k,l])=>`<th data-k="${k}" tabindex="0" class="${k==sortK?"s"+(asc?" a":""):""}">${l}</th>`).join("")}</tr></thead><tbody>`+
+  v.slice(0,500).map(r=>`<tr><td class="nw">${f(r.fecha)}</td><td class="nw">${r.url?`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.codigo)}</a>`:esc(r.codigo)}</td>
+  <td>${esc(r.tipo)}</td><td>${esc(r.objeto)}</td><td class="d">${esc(r.descripcion)}</td><td>${esc(r.entidad)}</td><td>${esc(r.departamento||"—")}</td>
+  <td class="nw num">${money(r.monto,r.moneda)}</td><td>${pill(r.estado)}</td><td class="nw">${f(r.cierre)}</td></tr>`).join("")+`</tbody></table></div>`+
+  (v.length>500?`<div class="more">Mostrando 500 de ${v.length.toLocaleString("es-PE")}. Usa los filtros para acotar.</div>`:"");
+ document.querySelectorAll("th").forEach(th=>{const go=()=>{const k=th.dataset.k;asc=sortK==k?!asc:k!="fecha"&&k!="monto";sortK=k;render()};th.onclick=go;th.onkeydown=e=>{if(e.key=="Enter")go()}});
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{tab=b.dataset.t;document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x==b));render()});
+$("buscar").onclick=render;
+document.querySelectorAll("fieldset input,fieldset select").forEach(el=>el.addEventListener(el.tagName=="SELECT"||el.type=="date"?"change":"input",render));
+$("limpiar").onclick=()=>{document.querySelectorAll("fieldset input").forEach(i=>i.value="");document.querySelectorAll("fieldset select").forEach(s=>s.value="");render()};
+</script>
+</body>
+</html>

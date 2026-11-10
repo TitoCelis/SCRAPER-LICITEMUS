@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Corre ambos scrapers y deja procesos.json + contratos_8uit.json para el explorador (index.html).
+# Corre ambos scrapers y deja procesos.json + contratos_8uit.json para el explorador (radar.html).
 # Uso: ./actualizar.sh [--supabase]
 # Cron sugerido: 0 */2 * * * cd /opt/radar && ./actualizar.sh --supabase >> radar.log 2>&1
 cd "$(dirname "$0")" || exit 1
