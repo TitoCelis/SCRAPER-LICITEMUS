@@ -246,6 +246,43 @@ def upsert_supabase(filas):
     print(f"Supabase: {len(filas)} filas en {tabla}.")
 
 
+def diagnostico():
+    """Imprime cómo responde la API para ajustar el scraper. No escribe nada."""
+    s = requests.Session()
+    s.headers.update(HEADERS)
+    pruebas = [
+        ("raiz", f"{API}/?format=json"),
+        ("releasesAfter", f"{API}/releasesAfter?format=json&order=desc"),
+        ("releases", f"{API}/releases?format=json"),
+        ("files", f"{API}/files?page=1&paginateBy=5&format=json"),
+    ]
+    for nombre, url in pruebas:
+        print(f"\n===== {nombre}: {url}")
+        try:
+            r = s.get(url, timeout=60)
+            print("HTTP", r.status_code, "|", r.headers.get("content-type"))
+            try:
+                d = r.json()
+            except ValueError:
+                print(r.text[:600]); continue
+            if isinstance(d, dict):
+                print("claves:", list(d.keys())[:15])
+                for k in ("links", "pagination", "count", "next"):
+                    if k in d:
+                        print(f"{k}:", json.dumps(d[k], ensure_ascii=False)[:500])
+                rels = d.get("releases") or d.get("records") or d.get("results") or []
+                for x in rels[:4]:
+                    if isinstance(x, dict):
+                        t = x.get("tender") or {}
+                        print("  -", x.get("ocid") or x.get("id"), "|", x.get("date"), "|",
+                              (t.get("tenderPeriod") or {}).get("startDate"), "|",
+                              json.dumps(x, ensure_ascii=False)[:300] if not t else (t.get("title") or "")[:60])
+            else:
+                print(json.dumps(d, ensure_ascii=False)[:600])
+        except requests.RequestException as e:
+            print("ERROR", e)
+
+
 def main():
     ap = argparse.ArgumentParser(description="Radar de procesos SEACE (API OCDS OECE)")
     ap.add_argument("--dias", type=int, default=7, help="cuántos días hacia atrás revisar")
@@ -260,7 +297,11 @@ def main():
     ap.add_argument("--pausa", type=float, default=0.5, help="segundos entre páginas")
     ap.add_argument("--out", default="procesos")
     ap.add_argument("--supabase", action="store_true")
+    ap.add_argument("--diagnostico", action="store_true", help="muestra cómo responde la API y sale")
     args = ap.parse_args()
+    if args.diagnostico:
+        diagnostico()
+        return
 
     filas = descargar(args)
     guardar(filas, args.out)
