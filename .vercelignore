@@ -1,0 +1,6 @@
+*.py
+*.sh
+.env*
+requirements.txt
+supabase/
+__pycache__/

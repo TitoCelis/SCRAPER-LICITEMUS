@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/licita-peru.html" },
+    { "source": "/radar", "destination": "/index.html" }
+  ]
+}
