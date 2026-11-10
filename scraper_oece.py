@@ -153,34 +153,39 @@ def pasa_filtro(row, args, tipos):
     return True
 
 
-def descargar(args):
+def _bajar_pagina(s, pagina):
+    url = f"{API}/releases?format=json&page={pagina}"
+    for intento in range(4):
+        try:
+            r = s.get(url, timeout=60)
+            if r.status_code == 404:  # pasamos la última página
+                return []
+            r.raise_for_status()
+            return r.json().get("releases") or []
+        except (requests.RequestException, ValueError) as e:
+            espera = 5 * (intento + 1)
+            print(f"  ! pág {pagina}: {e} — reintento en {espera}s", file=sys.stderr)
+            time.sleep(espera)
+    return None
+
+
+def descargar(args, al_guardar=None):
+    """Recorre /releases (lo más reciente primero) bajando varias páginas a la vez.
+    al_guardar(filas_nuevas) se llama cada tanda para ir subiendo lo encontrado."""
+    from concurrent.futures import ThreadPoolExecutor
+
     corte = datetime.now(timezone.utc) - timedelta(days=args.dias)
     tipos = [norm(x) for x in (args.tipos.split(",") if args.tipos else TIPOS_DEFAULT)]
-    url = start_url()
     ahora = datetime.now(timezone.utc)
-    paginas_viejas = 0
-    filas, vistos = {}, 0
+    filas, pendientes, vistos = {}, {}, 0
+    paginas_viejas, pagina, seguir = 0, 1, True
     s = requests.Session()
     s.headers.update(HEADERS)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=args.hilos, pool_maxsize=args.hilos)
+    s.mount("https://", adapter)
 
-    for pagina in range(1, args.max_paginas + 1):
-        for intento in range(4):
-            try:
-                r = s.get(url, timeout=60)
-                r.raise_for_status()
-                data = r.json()
-                break
-            except (requests.RequestException, ValueError) as e:
-                espera = 5 * (intento + 1)
-                print(f"  ! pág {pagina}: {e} — reintento en {espera}s", file=sys.stderr)
-                time.sleep(espera)
-        else:
-            print("  ! Demasiados errores, corto aquí.", file=sys.stderr)
-            break
-
-        releases = data.get("releases") or []
-        if not releases:
-            break
+    def procesar(releases):
+        nonlocal vistos
         mas_antiguo = mas_nuevo = None
         for rel in releases:
             vistos += 1
@@ -193,7 +198,7 @@ def descargar(args):
                 continue
             periodo = t.get("tenderPeriod") or {}
             inicio, cierre = parse_date(periodo.get("startDate")), parse_date(periodo.get("endDate"))
-            # nos quedamos con lo vigente: plazo abierto, o sin plazo pero convocado dentro de la ventana
+            # solo lo vigente: plazo abierto, o sin plazo pero convocado dentro de la ventana
             if cierre and cierre < ahora:
                 continue
             if not cierre and (inicio or d) and (inicio or d) < corte:
@@ -201,21 +206,42 @@ def descargar(args):
             row = aplanar(rel)
             if pasa_filtro(row, args, tipos):
                 prev = filas.get(row["ocid"])
-                # nos quedamos con la versión más reciente de cada proceso
                 if not prev or (row["fecha_publicacion"] or "") > (prev["fecha_publicacion"] or ""):
                     filas[row["ocid"]] = row
+                    pendientes[row["ocid"]] = row
+        return mas_antiguo, mas_nuevo
 
-        rango = f"{mas_antiguo:%Y-%m-%d}..{mas_nuevo:%Y-%m-%d}" if mas_antiguo else "sin fechas"
-        print(f"  pág {pagina}: {len(releases)} releases · {rango} · {len(filas)} procesos filtrados")
-        # cortamos cuando dos páginas seguidas solo traen actualizaciones anteriores a la ventana
-        paginas_viejas = paginas_viejas + 1 if (mas_nuevo and mas_nuevo < corte) else 0
-        if paginas_viejas >= 2:
-            break
-        nxt = (data.get("links") or {}).get("next")
-        if not nxt:
-            break
-        url = nxt
-        time.sleep(args.pausa)
+    try:
+        with ThreadPoolExecutor(max_workers=args.hilos) as pool:
+            while seguir and pagina <= args.max_paginas:
+                numeros = list(range(pagina, min(pagina + args.hilos, args.max_paginas + 1)))
+                resultados = list(pool.map(lambda n: _bajar_pagina(s, n), numeros))
+                mas_antiguo = None
+                for n, releases in zip(numeros, resultados):
+                    if releases is None:
+                        print("  ! Demasiados errores, corto aquí.", file=sys.stderr)
+                        seguir = False
+                        break
+                    if not releases:
+                        seguir = False
+                        break
+                    mas_antiguo, mas_nuevo = procesar(releases)
+                    # cortamos cuando dos páginas seguidas son de antes de la ventana
+                    paginas_viejas = paginas_viejas + 1 if (mas_nuevo and mas_nuevo < corte) else 0
+                    if paginas_viejas >= 2:
+                        seguir = False
+                        break
+                rango = f"{mas_antiguo:%Y-%m-%d %H:%M}" if seguir and mas_antiguo else "fin"
+                print(f"  págs {numeros[0]}-{numeros[-1]} · llegando a {rango} · {len(filas)} procesos")
+                if al_guardar and pendientes and (len(pendientes) >= 50 or not seguir):
+                    al_guardar(list(pendientes.values()))
+                    pendientes.clear()
+                pagina = numeros[-1] + 1
+                time.sleep(args.pausa)
+    except KeyboardInterrupt:
+        print("\n  Cortado con Ctrl+C: guardo lo encontrado hasta ahora.")
+    if al_guardar and pendientes:
+        al_guardar(list(pendientes.values()))
 
     print(f"Revisados {vistos} releases → {len(filas)} procesos.")
     return sorted(filas.values(), key=lambda x: -(x["monto"] or 0))
@@ -297,7 +323,8 @@ def main():
     ap.add_argument("--incluir-sin-monto", action="store_true",
                     help="no descartar procesos sin valor referencial publicado")
     ap.add_argument("--max-paginas", type=int, default=3000)
-    ap.add_argument("--pausa", type=float, default=0.3, help="segundos entre páginas")
+    ap.add_argument("--pausa", type=float, default=0.2, help="segundos entre tandas")
+    ap.add_argument("--hilos", type=int, default=8, help="páginas que baja a la vez")
     ap.add_argument("--out", default="procesos")
     ap.add_argument("--supabase", action="store_true")
     ap.add_argument("--diagnostico", action="store_true", help="muestra cómo responde la API y sale")
@@ -306,10 +333,8 @@ def main():
         diagnostico()
         return
 
-    filas = descargar(args)
+    filas = descargar(args, al_guardar=upsert_supabase if args.supabase else None)
     guardar(filas, args.out)
-    if args.supabase:
-        upsert_supabase(filas)
 
 
 if __name__ == "__main__":
