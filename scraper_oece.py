@@ -50,7 +50,13 @@ cargar_env()
 
 API = "https://contratacionesabiertas.oece.gob.pe/api/v1"
 START_URL = f"{API}/releasesAfter?format=json&order=desc"
-HEADERS = {"User-Agent": "LicitaPeru/1.0 (+scraper OCDS)", "Accept": "application/json"}
+# La API rechaza (403) clientes que no parecen navegador
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "es-PE,es;q=0.9",
+    "Referer": "https://contratacionesabiertas.oece.gob.pe/",
+}
 
 # Tipos de procedimiento considerados "grandes"
 TIPOS_DEFAULT = [
