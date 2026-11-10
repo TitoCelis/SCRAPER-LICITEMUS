@@ -32,6 +32,22 @@ from datetime import datetime, timedelta, timezone
 
 import requests
 
+
+def cargar_env(ruta=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")):
+    """Lee SUPABASE_URL / SUPABASE_KEY / SUPABASE_TABLE desde .env (también en Windows)."""
+    if not os.path.exists(ruta):
+        return
+    with open(ruta, encoding="utf-8") as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea or linea.startswith("#") or "=" not in linea:
+                continue
+            k, v = linea.split("=", 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+cargar_env()
+
 API = "https://contratacionesabiertas.oece.gob.pe/api/v1"
 START_URL = f"{API}/releasesAfter?format=json&order=desc"
 HEADERS = {"User-Agent": "LicitaPeru/1.0 (+scraper OCDS)", "Accept": "application/json"}
