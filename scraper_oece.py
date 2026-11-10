@@ -15,7 +15,7 @@ Uso:
   python scraper_oece.py --supabase   # además hace upsert a Supabase (ver variables abajo)
 
 Variables para Supabase (opcional):
-  SUPABASE_URL, SUPABASE_KEY, SUPABASE_TABLE (default: procesos_seace, PK = ocid)
+  SUPABASE_URL, SUPABASE_KEY, SUPABASE_TABLE (default: licita_procesos, PK = ocid). SUPABASE_KEY = service_role
 
 Cron sugerido en tu VPS (cada 2 h):
   0 */2 * * * cd /opt/radar && /usr/bin/python3 scraper_oece.py --dias 2 --supabase >> radar.log 2>&1
@@ -196,7 +196,7 @@ def guardar(filas, out):
 
 def upsert_supabase(filas):
     url, key = os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY")
-    tabla = os.getenv("SUPABASE_TABLE", "procesos_seace")
+    tabla = os.getenv("SUPABASE_TABLE", "licita_procesos")
     if not (url and key):
         print("  ! Falta SUPABASE_URL / SUPABASE_KEY, salto el upsert.", file=sys.stderr)
         return
