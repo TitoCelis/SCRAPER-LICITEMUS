@@ -1,4 +1,7 @@
 {
+  "framework": null,
+  "buildCommand": "",
+  "installCommand": "",
   "cleanUrls": true,
   "rewrites": [
     { "source": "/", "destination": "/licita-peru.html" },
