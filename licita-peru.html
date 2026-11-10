@@ -168,7 +168,7 @@ a{color:var(--accent)}
   <nav role="tablist">
     <button role="tab" id="t-explorar" aria-selected="true" data-v="explorar">Explorar procesos</button>
     <button role="tab" id="t-empresa" aria-selected="false" data-v="empresa">Mi empresa</button>
-    <button role="tab" id="t-reporte" aria-selected="false" data-v="reporte">Mi reporte</button>
+    <button role="tab" id="t-reporte" aria-selected="false" data-v="reporte">Mi reporte <span class="tag" id="nuevosTab" hidden></span></button>
   </nav>
 
   <div id="status" class="status">Cargando procesos…</div>
@@ -207,7 +207,7 @@ a{color:var(--accent)}
 
   <section id="v-empresa" hidden>
     <div class="card" style="display:grid;gap:18px">
-      <div><h2>Perfil de la empresa</h2><p class="sub">Define a qué se dedica tu empresa. Con esto armamos tu reporte y el correo diario.</p></div>
+      <div><h2>Perfil de la empresa</h2><p class="sub">Define a qué se dedica tu empresa. Con esto armamos tu reporte diario.</p></div>
       <form id="fPerfil" class="form" novalidate>
         <div><label class="lbl" for="pRazon">Razón social</label><input type="text" id="pRazon" placeholder="Ej. Distribuidora Andina S.A.C." required></div>
         <div><label class="lbl" for="pRuc">RUC</label><input type="text" id="pRuc" inputmode="numeric" maxlength="11" placeholder="20xxxxxxxxx"><div class="hint" id="rucHint"></div></div>
@@ -219,11 +219,6 @@ a{color:var(--accent)}
         <div class="full"><span class="lbl">Departamentos donde atiendes (vacío = todo el Perú)</span><div class="chips" id="pDeps"></div></div>
         <div class="full"><span class="lbl">Procedimientos a los que postulas</span><div class="chips" id="pTipos"></div></div>
         <div class="full chk"><input type="checkbox" id="pRnp"><label for="pRnp">Tengo inscripción vigente en el RNP</label></div>
-        <div class="full" style="display:grid;gap:10px;border-top:1px solid var(--line);padding-top:16px">
-          <span class="lbl">Correo diario</span>
-          <div class="chk"><input type="checkbox" id="pDiario" checked><label for="pDiario">Enviarme cada mañana (7:00 a. m.) los procesos nuevos que calzan con mi empresa</label></div>
-          <div style="max-width:420px"><label class="lbl" for="pMail">Enviar a</label><input type="email" id="pMail" placeholder="correo@empresa.pe"><div class="hint">Por defecto, el correo de tu cuenta.</div></div>
-        </div>
         <div class="full row-actions"><button type="submit" class="primary" id="btnGuardar">Guardar perfil</button><button type="button" data-go="reporte">Ver mi reporte</button><span class="sub" id="saveMsg" aria-live="polite"></span></div>
       </form>
     </div>
@@ -260,8 +255,8 @@ const RUBROS={
 };
 
 let DATA=[], usuario=null, perfil=null;
-const PERFIL_VACIO={razon:"",ruc:"",rubros:[],kw:"",excl:"",monto_min:null,monto_max:null,deps:[],tipos:["Licitación Pública","Concurso Público","Contratación Directa","Adjudicación Simplificada","Subasta Inversa"],rnp:false,email_diario:true,email_reporte:""};
-const st={view:"explorar",q:"",tipos:new Set(["Licitación Pública","Concurso Público","Contratación Directa"]),cats:new Set(),monto:400000,dep:"",vig:true,sinMonto:false,sort:"monto",dir:-1,open:null};
+const PERFIL_VACIO={razon:"",ruc:"",rubros:[],kw:"",excl:"",monto_min:null,monto_max:null,deps:[],tipos:["Licitación Pública","Concurso Público","Contratación Directa","Adjudicación Simplificada","Subasta Inversa"],rnp:false};
+const st={view:"explorar",q:"",tipos:new Set(["Licitación Pública","Concurso Público","Contratación Directa"]),cats:new Set(),monto:400000,dep:"",vig:true,sinMonto:false,sort:"monto",dir:-1,open:null,rep:null};
 
 const $=id=>document.getElementById(id);
 const nrm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
@@ -343,8 +338,8 @@ async function entrar(){
   const [{data:p,error:pe}]=await Promise.all([sb.from("licita_empresas").select("*").eq("user_id",usuario.id).maybeSingle(),cargarProcesos()]);
   if(pe)setStatus("No pude leer tu perfil: "+esc(pe.message),true);
   perfil={...PERFIL_VACIO,...(p||{})};
-  pintarCuenta();llenarForm();rerender();
-  if(!p)ir("empresa");
+  pintarCuenta();llenarForm();rerender();pintarBadge();
+  if(!p)ir("empresa");else if(perfilListo())ir("reporte");
 }
 function pintarCuenta(){
   const n=perfil?.razon||usuario?.email||"";
@@ -442,7 +437,9 @@ async function renderReporte(){
   if(!perfilListo()){
     box.innerHTML=`<div class="gate"><h2>Primero cuéntanos qué vende tu empresa</h2><p class="sub">El reporte cruza los procesos vigentes con tus rubros, montos y departamentos.</p><button class="primary" data-go="empresa">Completar perfil</button></div>`;return;
   }
-  const ops=oportunidades(),tot=ops.reduce((s,r)=>s+(Number(r.monto)||0),0);
+  const todas=oportunidades(),nuevas=todas.filter(esNuevo);
+  if(st.rep===null)st.rep=nuevas.length?"hoy":"todos";
+  const ops=st.rep==="hoy"?nuevas:todas,tot=ops.reduce((s,r)=>s+(Number(r.monto)||0),0);
   const porRub={};ops.forEach(r=>r._rub.forEach(x=>{porRub[x]=porRub[x]||{n:0,m:0};porRub[x].n++;porRub[x].m+=Number(r.monto)||0}));
   const hoy=new Date().toLocaleDateString("es-PE",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
   box.innerHTML=`
@@ -450,13 +447,16 @@ async function renderReporte(){
       <div><span class="lbl">Reporte de oportunidades</span><h2>${esc(perfil.razon)}</h2>
         <div class="rep-meta">${perfil.ruc?`<span>RUC <b>${esc(perfil.ruc)}</b></span>`:""}<span>Rubros: <b>${esc([...perfil.rubros,...(perfil.kw?["palabras propias"]:[])].join(", "))}</b></span>
         <span>Cobertura: <b>${perfil.deps.length?esc(perfil.deps.join(", ")):"Todo el Perú"}</b> · Montos: <b>${perfil.monto_min?soles(perfil.monto_min):"S/ 0"} a ${perfil.monto_max?soles(perfil.monto_max):"sin límite"}</b></span>
-        <span>Emitido el ${hoy} sobre ${DATA.length} procesos vigentes</span></div></div>
-      <div class="row-actions"><button id="dlCsv">Descargar CSV</button><button id="dlHtml">Descargar reporte</button><button id="btnMail" class="primary">Enviármelo por correo</button></div>
+        <span>Reporte del ${hoy} · ${DATA.length} procesos vigentes en la base</span></div></div>
+      <div class="row-actions"><button id="dlCsv">Descargar CSV</button><button id="dlHtml" class="primary">Descargar reporte</button></div>
     </div>
-    <div class="msg" id="mailMsg" aria-live="polite"></div>
+    <div class="chips" role="group" aria-label="Qué procesos ver">
+      <button class="chip" data-rep="hoy" aria-pressed="${st.rep==="hoy"}">Nuevos en las últimas 24 h · ${nuevas.length}</button>
+      <button class="chip" data-rep="todos" aria-pressed="${st.rep==="todos"}">Todos los vigentes · ${todas.length}</button>
+    </div>
     ${!perfil.rnp?`<div class="status err">Marcaste que no tienes RNP vigente. Sin inscripción en el RNP no puedes presentar ofertas.</div>`:""}
     <div class="kpis">
-      <div class="kpi"><b>${ops.length}</b><span>procesos en los que puedes participar</span></div>
+      <div class="kpi"><b>${ops.length}</b><span>${st.rep==="hoy"?"procesos nuevos para ti":"procesos en los que puedes participar"}</span></div>
       <div class="kpi"><b>${corto(tot)}</b><span>valor referencial en juego</span></div>
       <div class="kpi"><b>${ops.filter(r=>{const n=dias(r.fecha_cierre);return n!==null&&n<=3}).length}</b><span>cierran en 3 días o menos</span></div>
       <div class="kpi"><b>${ops.filter(r=>nrm(r.tipo).includes("directa")).length}</b><span>contrataciones directas</span></div>
@@ -464,29 +464,16 @@ async function renderReporte(){
     ${Object.keys(porRub).length?`<div><span class="lbl">Por rubro</span><div class="rubros">${Object.entries(porRub).sort((a,b)=>b[1].m-a[1].m).map(([k,v])=>`<div class="rub"><span>${esc(k)}</span><b>${v.n} · ${corto(v.m)}</b></div>`).join("")}</div></div>`:""}
     <div class="tablebox"><table>
       <thead><tr><th>Calce</th><th>Oportunidad</th><th>Entidad</th><th style="text-align:right">Valor ref.</th><th>Cierre ofertas</th></tr></thead>
-      <tbody>${ops.length?ops.map(r=>filaHTML(r,`<div class="score">${r._score}%</div><div class="meter"><i style="width:${r._score}%"></i></div>`)).join(""):'<tr><td colspan="5" class="empty">Hoy no hay procesos vigentes que calcen con tu perfil. Prueba sumar palabras clave, ampliar departamentos o subir el monto máximo.</td></tr>'}</tbody>
-    </table></div>
-    <div><span class="lbl">Últimos correos</span><div class="envios" id="envios"><span class="sub">Cargando…</span></div></div>`;
+      <tbody>${ops.length?ops.map(r=>filaHTML(r,`<div class="score">${r._score}%</div><div class="meter"><i style="width:${r._score}%"></i></div>`)).join(""):`<tr><td colspan="5" class="empty">${st.rep==="hoy"?"No entró ningún proceso nuevo para tu rubro en las últimas 24 horas. Mira la pestaña de todos los vigentes.":"No hay procesos vigentes que calcen con tu perfil. Prueba sumar palabras clave, ampliar departamentos o subir el monto máximo."}</td></tr>`}</tbody>
+    </table></div>`;
   $("dlCsv").onclick=()=>bajar(`licita-peru-${hoyISO()}.csv`,csvDe(ops),"text/csv");
   $("dlHtml").onclick=()=>bajar(`reporte-licita-peru-${hoyISO()}.html`,reporteHTML(ops,porRub,tot,hoy),"text/html");
-  $("btnMail").onclick=enviarAhora;
-  cargarEnvios();
+  box.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{st.rep=b.dataset.rep;renderReporte();});
 }
-async function cargarEnvios(){
-  const {data,error}=await sb.from("licita_envios").select("enviado,n_procesos,estado,detalle").order("enviado",{ascending:false}).limit(5);
-  const el=$("envios");if(!el)return;
-  if(error){el.innerHTML=`<span class="sub">No pude leer el historial.</span>`;return;}
-  const lbl={enviado:"Enviado",sin_novedades:"Sin procesos nuevos",error:"Error"};
-  el.innerHTML=data.length?data.map(e=>`<div><span>${fecha(e.enviado)}</span><span>${lbl[e.estado]||esc(e.estado)} · ${e.n_procesos} procesos${e.detalle?` · <span class="sub">${esc(e.detalle.slice(0,80))}</span>`:""}</span></div>`).join(""):`<span class="sub">Aún no se ha enviado ningún correo. El primero sale mañana a las 7:00 a. m.${perfil.email_diario?"":" (tienes el correo diario apagado)"}</span>`;
-}
-async function enviarAhora(){
-  const b=$("btnMail"),m=$("mailMsg");b.disabled=true;m.className="msg";m.textContent="Enviando…";
-  try{
-    const {data,error}=await sb.functions.invoke("reporte-diario",{body:{}});
-    if(error){let t=error.message;try{const j=await error.context.json();t=j.error||t}catch{}throw new Error(t);}
-    m.className="msg ok";m.textContent=`Listo: te llegó un correo con ${data.n} procesos a ${perfil.email_reporte||usuario.email}.`;
-  }catch(e){m.className="msg err";m.textContent="No se pudo enviar: "+e.message;}
-  finally{b.disabled=false;cargarEnvios();}
+const esNuevo=r=>r.creado&&(Date.now()-new Date(r.creado))<864e5;
+function pintarBadge(){
+  const n=perfilListo()?oportunidades().filter(esNuevo).length:0,t=$("nuevosTab");
+  t.hidden=!n;t.textContent=n+" nuevo"+(n===1?"":"s");
 }
 const hoyISO=()=>new Date().toISOString().slice(0,10);
 function csvDe(rows){
@@ -520,7 +507,6 @@ function llenarForm(){
   fp=JSON.parse(JSON.stringify(perfil));
   $("pRazon").value=fp.razon||"";$("pRuc").value=fp.ruc||"";$("pKw").value=fp.kw||"";$("pExcl").value=fp.excl||"";
   $("pMin").value=fp.monto_min??"";$("pMax").value=fp.monto_max??"";$("pRnp").checked=!!fp.rnp;
-  $("pDiario").checked=fp.email_diario!==false;$("pMail").value=fp.email_reporte||"";$("pMail").placeholder=usuario?.email||"correo@empresa.pe";
   chipSet($("pRubros"),Object.keys(RUBROS),fp.rubros);chipSet($("pDeps"),DEPS,fp.deps);chipSet($("pTipos"),TIPOS,fp.tipos);
 }
 $("pRuc").oninput=e=>{const v=e.target.value.replace(/\D/g,"");e.target.value=v;$("rucHint").textContent=v&&!/^(10|15|17|20)\d{9}$/.test(v)?"El RUC tiene 11 dígitos y empieza con 10, 15, 17 o 20.":"";};
@@ -529,17 +515,14 @@ $("fPerfil").onsubmit=async e=>{
   const razon=$("pRazon").value.trim();
   if(!razon){msg.textContent="Escribe la razón social.";$("pRazon").focus();return;}
   if(!fp.rubros.length&&!lista($("pKw").value).length){msg.textContent="Elige al menos un rubro o escribe tus palabras clave.";return;}
-  const mail=$("pMail").value.trim();
-  if(mail&&!/^\S+@\S+\.\S+$/.test(mail)){msg.textContent="Revisa el correo de envío.";$("pMail").focus();return;}
   const num=v=>v===""?null:Math.max(0,+v);
   const fila={user_id:usuario.id,razon,ruc:$("pRuc").value.trim(),rubros:fp.rubros,kw:$("pKw").value.trim(),excl:$("pExcl").value.trim(),
-    monto_min:num($("pMin").value),monto_max:num($("pMax").value),deps:fp.deps,tipos:fp.tipos,rnp:$("pRnp").checked,
-    email_diario:$("pDiario").checked,email_reporte:mail||null};
+    monto_min:num($("pMin").value),monto_max:num($("pMax").value),deps:fp.deps,tipos:fp.tipos,rnp:$("pRnp").checked};
   $("btnGuardar").disabled=true;msg.textContent="Guardando…";
   const {data,error}=await sb.from("licita_empresas").upsert(fila).select().single();
   $("btnGuardar").disabled=false;
   if(error){msg.textContent="No se pudo guardar: "+error.message;return;}
-  perfil={...PERFIL_VACIO,...data};msg.textContent="Perfil guardado.";pintarCuenta();
+  perfil={...PERFIL_VACIO,...data};st.rep=null;msg.textContent="Perfil guardado.";pintarCuenta();pintarBadge();
 };
 
 /* ---------- navegación ---------- */

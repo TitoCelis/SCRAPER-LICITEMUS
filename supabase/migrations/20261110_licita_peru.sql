@@ -77,3 +77,10 @@ revoke execute on function public.licita_disparar_reporte() from anon, authentic
 select cron.schedule('licita-reporte-diario', '0 12 * * *', $$select public.licita_disparar_reporte()$$);
 
 -- Los registros con metadata app=licita no crean usuario en la app "0 papeles" (public.handle_new_user).
+
+-- 2026-11-10: se quitan los correos; el reporte diario vive en la app.
+select cron.unschedule('licita-reporte-diario');
+drop function if exists public.licita_disparar_reporte();
+drop table if exists public.licita_envios;
+drop table if exists public.licita_config;
+alter table public.licita_empresas drop column if exists email_diario, drop column if exists email_reporte;

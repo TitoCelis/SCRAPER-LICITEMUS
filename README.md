@@ -7,8 +7,7 @@ Radar de contrataciones del Estado peruano.
 | `scraper_oece.py` | API OCDS del OECE (`contratacionesabiertas.oece.gob.pe`) | Procesos grandes: Licitación Pública, Concurso Público, Contratación Directa, etc. |
 | `scraper_8uit.py` | Buscador público de contrataciones ≤ 8 UIT (`prep6.seace.gob.pe`) | Contratos menores |
 | `index.html` | — | Buscador unificado: pestañas *Procesos de selección* (`procesos.json`) y *Contrataciones ≤ 8 UIT* (`contratos_8uit.json`), con filtros por objeto, procedimiento, estado, departamento, entidad, fechas y monto |
-| `licita-peru.html` | Supabase `licita_procesos` | **Licita Perú**: login con correo y contraseña, perfil de empresa por rubro, reporte de procesos a los que puede postular (CSV/HTML) y envío por correo |
-| `supabase/functions/reporte-diario` | — | Correo diario 7:00 a. m. (Lima) con los procesos nuevos que calzan con cada empresa (Resend) |
+| `licita-peru.html` | Supabase `licita_procesos` | **Licita Perú**: login con correo y contraseña, perfil de empresa por rubro y reporte diario en la app (nuevos en 24 h + todos los vigentes, descarga CSV/HTML) |
 | `actualizar.sh` | — | Corre ambos scrapers de una vez |
 
 ## Instalación
@@ -46,8 +45,6 @@ Proyecto **Titos App** (`ahcepuufqcatzgocqjkm`). Las tablas de Licita Perú llev
 |---|---|---|
 | `licita_procesos` | Procesos del scraper (PK `ocid`) | Lectura: usuarios con sesión. Escritura: solo `service_role` (scraper) |
 | `licita_empresas` | Perfil de cada empresa (1 por usuario) | Cada usuario solo la suya |
-| `licita_envios` | Historial de correos | Cada usuario solo los suyos |
-| `licita_config` | Secreto del cron | Solo `service_role` |
 
 Llenar la base desde el VPS:
 
@@ -58,16 +55,14 @@ cp .env.example .env   # pega la service_role key (Project Settings > API Keys)
 
 `SUPABASE_TABLE_8UIT` (PK `id_contrato`) sigue siendo opcional para el scraper 8 UIT.
 
-### Correo diario
+### Reporte diario
 
-- Edge function `reporte-diario`, disparada por `pg_cron` todos los días a las 12:00 UTC (7:00 a. m. Lima). Manda los procesos **nuevos de las últimas 24 h** que calzan con cada empresa con el correo diario activo.
-- El botón *Enviármelo por correo* en *Mi reporte* manda al momento todos los vigentes (máx. 5 por día).
-- Secretos de la función (Supabase > Edge Functions > Secrets): `RESEND_API_KEY` (obligatorio), `RESEND_FROM` (ej. `Licita Perú <reportes@tudominio.pe>`, requiere dominio verificado en Resend), `APP_URL` (link del botón del correo).
+No hay correos: al entrar, *Mi reporte* muestra los procesos **nuevos en las últimas 24 h** que calzan con la empresa (con contador en la pestaña) y, aparte, todos los vigentes. "Nuevo" = la primera vez que el scraper lo guardó (`creado`).
 
 ### Auth
 
-- Supabase > Authentication > URL Configuration: poner la URL donde publiques `licita-peru.html` en *Site URL* y *Redirect URLs* (para confirmar correo y recuperar contraseña).
-- El SMTP por defecto de Supabase manda pocos correos por hora; para producción configura SMTP propio (Resend sirve).
+- Supabase > Authentication > URL Configuration: poner la URL donde publiques `licita-peru.html` en *Site URL* y *Redirect URLs* (para confirmar cuenta y recuperar contraseña).
+- El SMTP por defecto de Supabase manda pocos correos por hora (confirmación y recuperación de contraseña); para muchos usuarios configura un SMTP propio.
 
 ## Cron sugerido (VPS)
 
