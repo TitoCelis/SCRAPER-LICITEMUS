@@ -49,7 +49,13 @@ def cargar_env(ruta=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".e
 cargar_env()
 
 API = "https://contratacionesabiertas.oece.gob.pe/api/v1"
-START_URL = f"{API}/releasesAfter?format=json&order=desc"
+# La API ordena por un índice interno y está particionada por año: con first=<prefijo>-999999-<año>
+# arranca en lo más nuevo de ese año y va bajando.
+OCID_PREFIJO = "ocds-dgv273-seacev3"
+
+
+def start_url(anio):
+    return f"{API}/releasesAfter?format=json&order=desc&first={OCID_PREFIJO}-999999-{anio}"
 # La API rechaza (403) clientes que no parecen navegador
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36",
@@ -73,7 +79,7 @@ TIPOS_DEFAULT = [
 CATEGORIAS = {"goods": "Bien", "services": "Servicio", "works": "Obra",
               "consultingServices": "Consultoría"}
 
-NOMENCLATURA_RE = re.compile(r"^[A-Z]{2,5}(-[A-Z]{1,4})?-\d")
+NOMENCLATURA_RE = re.compile(r"^[A-Z]{2,10}(-[A-Z]{1,8})*-\d+-\d{4}")
 
 
 def norm(txt):
@@ -153,7 +159,8 @@ def pasa_filtro(row, args, tipos):
 def descargar(args):
     corte = datetime.now(timezone.utc) - timedelta(days=args.dias)
     tipos = [norm(x) for x in (args.tipos.split(",") if args.tipos else TIPOS_DEFAULT)]
-    url = START_URL
+    url = start_url(args.anio or datetime.now().year)
+    paginas_viejas = 0
     filas, vistos = {}, 0
     s = requests.Session()
     s.headers.update(HEADERS)
@@ -176,12 +183,16 @@ def descargar(args):
         releases = data.get("releases") or []
         if not releases:
             break
-        mas_antiguo = None
+        mas_antiguo = mas_nuevo = None
         for rel in releases:
             vistos += 1
-            d = parse_date(rel.get("date"))
-            mas_antiguo = d if (mas_antiguo is None or (d and d < mas_antiguo)) else mas_antiguo
-            if not rel.get("tender"):
+            t = rel.get("tender") or {}
+            # fecha de convocatoria (inicio del periodo) o, si no hay, fecha del release
+            d = parse_date((t.get("tenderPeriod") or {}).get("startDate")) or parse_date(rel.get("date"))
+            if d:
+                mas_antiguo = d if mas_antiguo is None or d < mas_antiguo else mas_antiguo
+                mas_nuevo = d if mas_nuevo is None or d > mas_nuevo else mas_nuevo
+            if not t or (d and d < corte):
                 continue
             row = aplanar(rel)
             if pasa_filtro(row, args, tipos):
@@ -190,9 +201,11 @@ def descargar(args):
                 if not prev or (row["fecha_publicacion"] or "") > (prev["fecha_publicacion"] or ""):
                     filas[row["ocid"]] = row
 
-        print(f"  pág {pagina}: {len(releases)} releases · hasta {mas_antiguo:%Y-%m-%d %H:%M} · "
-              f"{len(filas)} procesos filtrados" if mas_antiguo else f"  pág {pagina}")
-        if mas_antiguo and mas_antiguo < corte:
+        rango = f"{mas_antiguo:%Y-%m-%d}..{mas_nuevo:%Y-%m-%d}" if mas_antiguo else "sin fechas"
+        print(f"  pág {pagina}: {len(releases)} releases · {rango} · {len(filas)} procesos filtrados")
+        # cortamos cuando dos páginas seguidas son enteramente más viejas que el corte
+        paginas_viejas = paginas_viejas + 1 if (mas_nuevo and mas_nuevo < corte) else 0
+        if paginas_viejas >= 2:
             break
         nxt = (data.get("links") or {}).get("next")
         if not nxt:
@@ -243,6 +256,7 @@ def main():
     ap.add_argument("--incluir-sin-monto", action="store_true",
                     help="no descartar procesos sin valor referencial publicado")
     ap.add_argument("--max-paginas", type=int, default=400)
+    ap.add_argument("--anio", type=int, default=0, help="año a recorrer (default: el actual)")
     ap.add_argument("--pausa", type=float, default=0.5, help="segundos entre páginas")
     ap.add_argument("--out", default="procesos")
     ap.add_argument("--supabase", action="store_true")
